@@ -1,0 +1,14 @@
+docs/deploy.md
+  h_e93d36a532a204 5-12,15,17,65-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "1044fc92a2596b1bc088e7f16592fca304794314",
+  "prompts": {},
+  "humans": {
+    "h_e93d36a532a204": {
+      "author": "Ayaan Kaifullah <60045274+Ayaan2907@users.noreply.github.com>"
+    }
+  }
+}
