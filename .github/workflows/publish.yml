@@ -1,0 +1,38 @@
+# Auto-publish blog posts from rough drafts.
+# Trigger: push into drafts/ (or run manually). The action polishes each draft into my voice
+# (puter, free; anthropic if that is what's configured), writes posts/<slug>.md, rebuilds
+# posts/index.json + feed.xml + content/billboards.json, commits, and pushes. Railway redeploys on push.
+# Secrets: PUTER_AUTH_TOKEN (or ANTHROPIC_API_KEY). Vars (optional): CHAT_MODEL, SITE_URL.
+name: publish
+on:
+  push:
+    branches: [main]
+    paths: ["drafts/**", "posts/**", "content/voice.md"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: publish
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: polish drafts → posts
+        env:
+          PUTER_AUTH_TOKEN: ${{ secrets.PUTER_AUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CHAT_MODEL: ${{ vars.CHAT_MODEL }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: node scripts/publish.mjs
+      - name: commit
+        run: |
+          git config user.name "ayaan (publish bot)"
+          git config user.email "60045274+Ayaan2907@users.noreply.github.com"
+          git add posts drafts feed.xml content/billboards.json
+          git diff --cached --quiet && echo "nothing to publish" || git commit -m "content(blog): publish $(date -u +%Y-%m-%d)"
+          git push
