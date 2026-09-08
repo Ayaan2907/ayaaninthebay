@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ayaan — blog</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23faf9f6'/%3E%3Ctext x='7' y='23' font-family='monospace' font-size='18' fill='%23c2631a'%3E%E2%9D%AF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/assets/style.css">
+<script>try{if(localStorage.getItem("theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/">ayaan<b>.</b></a>
+    <nav><a href="/blog/">blog</a><a href="/">terminal</a></nav>
+  </header>
+  <article class="post" id="post">
+    <div class="turn tool" style="margin-bottom:14px"><span class="g">●</span><div class="c"><span class="name">Read</span><span class="args" id="path">(~/blog/…)</span></div></div>
+    <h1 id="title">loading…</h1>
+    <div class="meta" id="meta"></div>
+    <div class="body" id="body"></div>
+    <p style="margin-top:36px"><a class="back" href="/blog/">← all posts</a> · <a class="back" href="https://x.com/ayaaninthebay" target="_blank" rel="noopener">reply on x</a></p>
+  </article>
+</div>
+<script src="/assets/md.js"></script>
+<script>
+(async()=>{
+  const slug=(location.pathname.replace(/^\/blog\//,"").replace(/\/$/,"")||new URLSearchParams(location.search).get("p")||"").replace(/[^a-z0-9-]/gi,"");
+  const $=id=>document.getElementById(id);
+  $("path").textContent=`(~/blog/${slug}.md)`;
+  try{
+    const src=await (await fetch(`/posts/${slug}.md`,{cache:"no-cache"})).text();
+    if(src.trim().startsWith("<!doctype")||src.trim().startsWith("<html"))throw 0;
+    const {data,body}=MD.frontMatter(src);
+    document.title=(data.title||slug)+" — ayaan";
+    $("title").textContent=data.title||slug;
+    $("meta").textContent=[data.date,data.tags].filter(Boolean).join(" · ");
+    $("body").innerHTML=MD.render(body);
+  }catch(e){$("title").textContent="404";$("body").innerHTML="<p>no such post. <a href='/blog/'>all posts</a></p>";}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>ayaan — blog</title>
+  <link>https://ayaan.sh/blog/</link>
+  <description>build logs, takes on ai and agents, notes from san francisco.</description>
+  <item>
+    <title>why my site is a terminal</title>
+    <link>https://ayaan.sh/blog/why-a-terminal</link>
+    <guid>https://ayaan.sh/blog/why-a-terminal</guid>
+    <pubDate>Tue, 08 Sep 2026 12:00:00 GMT</pubDate>
+    <description>an agent that answers as me felt more honest than a hero image.</description>
+  </item>
+</channel></rss>

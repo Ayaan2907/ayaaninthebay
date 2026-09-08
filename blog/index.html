@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blog — ayaan</title>
+<meta name="description" content="build logs, takes on ai and agents, and notes from san francisco.">
+<link rel="alternate" type="application/rss+xml" title="ayaan — blog" href="/feed.xml">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23faf9f6'/%3E%3Ctext x='7' y='23' font-family='monospace' font-size='18' fill='%23c2631a'%3E%E2%9D%AF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/assets/style.css">
+<script>try{if(localStorage.getItem("theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/">ayaan<b>.</b></a>
+    <nav><a href="/">terminal</a><a href="/#map">map</a><a href="/feed.xml">rss</a></nav>
+  </header>
+  <section class="post">
+    <div class="turn tool" style="margin-bottom:14px"><span class="g">●</span><div class="c"><span class="name">Glob</span><span class="args">(~/blog/*.md)</span></div></div>
+    <ul class="list" id="list"><li><span class="d"></span><span class="s">loading…</span></li></ul>
+  </section>
+</div>
+<script src="/assets/md.js"></script>
+<script>
+fetch("/posts/index.json",{cache:"no-cache"}).then(r=>r.json()).then(ps=>{
+  const ul=document.getElementById("list");
+  if(!ps.length){ul.innerHTML='<li><span class="d"></span><span class="s">no posts yet.</span></li>';return;}
+  ul.innerHTML=ps.map(p=>`<li><span class="d">${p.date}</span><span><a href="/blog/${p.slug}">${MD.esc(p.title)}</a><span class="s">${MD.esc(p.summary||"")}</span></span></li>`).join("");
+}).catch(()=>{document.getElementById("list").innerHTML='<li><span class="d"></span><span class="s">couldn\'t load posts.</span></li>'});
+</script>
+</body>
+</html>
