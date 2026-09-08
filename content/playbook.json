@@ -1,0 +1,50 @@
+{
+  "_about": "How Ayaan actually builds, condensed from ~/Developer/AgentOS (AGENTS.md, CODE-STYLE.md, UNSLOP.md, skills/*). Hand-maintained for now. /build reads this to (a) show the real pipeline as tool calls and (b) make the generated app follow the house style. Skill names and one-line descriptions are public; style and voice rules go into the model prompt only and are never printed. See docs/build-playbook.md for how to extend.",
+
+  "pipeline": [
+    { "skill": "ticket-create", "show": "Skill(ticket-create)", "desc": "turn an ask into a well-formed issue: title, acceptance criteria, out of scope", "emits": "issue" },
+    { "skill": "ticket-resolve", "show": "Skill(ticket-resolve)", "desc": "restate the acceptance criteria in one message; one sharp question before code, never an interrogation", "emits": "restate" },
+    { "skill": "ponytail", "show": "Plugin(ponytail)", "desc": "decide how much code to write: does this need to exist → reuse → stdlib → native platform → existing dep → one line → minimum that works", "emits": "ladder" },
+    { "skill": "code-style", "show": "Read(AgentOS/CODE-STYLE.md)", "desc": "house style for anything typed: strict types, early returns, named exports, sparse why-comments", "emits": null },
+    { "skill": "write", "show": "Write(index.html)", "desc": "one file, the minimum that passes the acceptance criteria", "emits": "html" },
+    { "skill": "check", "show": "Bash(bun run check)", "desc": "evidence over vibes: doctype, size, no network, a11y basics", "emits": "check" },
+    { "skill": "commit-structure", "show": "Skill(commit-structure)", "desc": "atomic conventional commit with scope, never a blanket git add -A", "emits": "commit" },
+    { "skill": "pr-create", "show": "Skill(pr-create)", "desc": "pr body in the house format: what, why, how to verify", "emits": "pr" },
+    { "skill": "publish", "show": "Bash(puter hosting create)", "desc": "ship it. small change, live in under a minute", "emits": "url" }
+  ],
+
+  "style": [
+    "simplest thing that works. no unrequested abstractions, helpers, flags, or error handling for cases that can't happen.",
+    "strict about types even in plain js: no implicit any-shaped objects; small named functions; early returns over nested ternaries; ?? over || unless falsy coercion is intended.",
+    "booleans named is*/has*, never negated (isNotReady is wrong).",
+    "named functions, one concern each. no god-function. keep the file under 250 lines.",
+    "validate at the boundary (user input, localStorage reads); trust internal code past it.",
+    "fail closed: bad input does nothing, never something surprising.",
+    "comments are sparse and say why, not what. no banner comments.",
+    "accessibility is not traded for brevity: real <button>s, labels on inputs, focus visible, contrast readable, works with keyboard.",
+    "mobile first, system font stack, one accent color, whitespace does the layout.",
+    "no external requests of any kind. no cdn, no fonts, no images from urls, no fetch."
+  ],
+
+  "voice": [
+    "lowercase, short sentences, say the thing and stop.",
+    "no em dashes. periods or commas.",
+    "banned words: delve, robust, comprehensive, seamless, powerful, cutting-edge, leverage, elevate, streamline, additionally, crucial, enhance, fostering, showcase, tapestry, testament, underscore, vibrant.",
+    "no 'not just x, but y'. no rule of three for its own sake. no puffery.",
+    "no chatbot phrases: 'i hope this helps', 'let me know', 'great question'.",
+    "sentence case headings. no decorative emojis. straight quotes.",
+    "say what it does, not how it feels. mechanism or number over adjective.",
+    "active voice. plain word over the fancy synonym."
+  ],
+
+  "commit": {
+    "format": "type(scope): summary",
+    "types": ["feat", "fix", "docs", "chore", "refactor"],
+    "rules": ["imperative mood", "under 72 chars", "no ai co-author trailers, ever"]
+  },
+
+  "pr": {
+    "sections": ["what", "why", "how to verify"],
+    "rules": ["one change per pr", "target ~100-line diffs", "plain agile vocabulary, no codenames"]
+  }
+}
