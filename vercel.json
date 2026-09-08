@@ -1,0 +1,10 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/blog/:slug", "destination": "/blog/post.html" }
+  ],
+  "headers": [
+    { "source": "/posts/(.*)", "headers": [{ "key": "cache-control", "value": "public, max-age=60, s-maxage=300" }] },
+    { "source": "/assets/(.*)", "headers": [{ "key": "cache-control", "value": "public, max-age=300, s-maxage=3600" }] }
+  ]
+}
