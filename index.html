@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ayaan — cracked developer, shipping every day</title>
+<meta name="description" content="Ayaan Kaifullah. Software engineer in San Francisco. Sole engineer at AdvanceIQ.ai, building WingMic. Ask the terminal anything.">
+<meta property="og:title" content="ayaan">
+<meta property="og:description" content="cracked developer, shipping every day. ask me anything.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@ayaaninthebay">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23faf9f6'/%3E%3Ctext x='7' y='23' font-family='monospace' font-size='18' fill='%23c2631a'%3E%E2%9D%AF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/assets/style.css">
+<script>
+  // theme before paint (light default; respect a saved choice)
+  try { var t = localStorage.getItem("theme"); if (t === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) {}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/">ayaan<b>.</b></a>
+    <nav>
+      <a href="/blog/">blog</a>
+      <button id="mapBtn" title="/map">sf</button>
+      <button id="themeBtn" title="/theme">theme</button>
+    </nav>
+  </header>
+
+  <section class="banner" id="banner">
+    <div class="t"><span class="spark">✻</span>welcome to <b>ayaan</b> <span class="v">v1.0</span></div>
+    <div class="row"><span class="k">cwd</span><span class="v">~/sf</span></div>
+    <div class="row"><span class="k">model</span><span class="v" id="modelLine">ayaan (local)</span></div>
+    <div class="row"><span class="k">hint</span><span class="v">ask me anything · <span class="cmdlink">/help</span> for commands</span></div>
+  </section>
+
+  <div class="log" id="log" aria-live="polite"></div>
+
+  <form class="prompt" id="promptForm" autocomplete="off">
+    <span class="g">❯</span>
+    <textarea id="input" rows="1" placeholder="ask me anything, or type / for commands" spellcheck="false" autofocus></textarea>
+    <div class="menu" id="menu" hidden></div>
+    <div class="hint"><kbd>enter</kbd> send · <kbd>/</kbd> commands · <kbd>↑</kbd> history · <kbd>ctrl</kbd>+<kbd>l</kbd> clear</div>
+  </form>
+</div>
+
+<footer class="status">
+  <div class="in">
+    <div class="l"><span class="who">ayaan@sf</span><span>~</span><span id="clock"></span></div>
+    <div class="r"><span id="aiState" class="ai-off">ai: checking</span><span class="hide-sm"> · <a href="https://github.com/ayaan2907" target="_blank" rel="noopener" style="border:0">gh</a> · <a href="https://x.com/ayaaninthebay" target="_blank" rel="noopener" style="border:0">x</a> · <a href="https://www.linkedin.com/in/ayaankaif/" target="_blank" rel="noopener" style="border:0">in</a></span></div>
+  </div>
+</footer>
+
+<!-- /map : graph of me -->
+<section class="map" id="map" hidden>
+  <div class="bar">
+    <div class="t">✻ <b>map</b> <span class="hint">drag · scroll · click a node · <kbd>t</kbd> timeline · <kbd>/</kbd> query</span></div>
+    <div class="q"><span>❯</span><input id="mapQuery" placeholder="query the graph… e.g. mastra, sf, 2025" spellcheck="false" autocomplete="off"></div>
+    <div class="r"><button id="mapMode">t · timeline</button><button id="mapClose">esc</button></div>
+  </div>
+  <canvas id="graph"></canvas>
+  <div class="legend">
+    <div><i style="border-color:var(--accent);background:var(--accent)"></i>me</div>
+    <div><i style="border-color:var(--accent-2)"></i>work</div>
+    <div><i style="border-color:var(--accent)"></i>projects</div>
+    <div><i style="border-color:var(--fg-dim)"></i>writing</div>
+    <div><i style="border-color:var(--fg-mute);border-style:dashed"></i>places · socials</div>
+  </div>
+  <div class="card" id="mapCard" hidden></div>
+</section>
+
+<!-- /map : sf at night -->
+<section class="map city" id="city" hidden>
+  <div class="bar">
+    <div class="t">✻ <b>sf</b> <span class="hint">drag · scroll · click a building · <kbd>n</kbd> night · <kbd>/</kbd> find</span></div>
+    <div class="q"><span>❯</span><input id="cityQuery" placeholder="find a repo, a district, a language…" spellcheck="false" autocomplete="off"></div>
+    <div class="r"><button id="cityNight">n · night</button><button id="cityClose">esc</button></div>
+  </div>
+  <canvas id="cityCanvas"></canvas>
+  <div class="hud" id="cityHud">building the city…</div>
+  <div class="legend">
+    <div><i style="border-color:var(--accent);background:var(--accent)"></i>landmark</div>
+    <div><i style="border-color:var(--fg-mute)"></i>repo · height = size + stars</div>
+    <div><i style="border-color:var(--accent-2);background:var(--accent-2)"></i>van = a github event</div>
+    <div><i style="border-color:#e7a55b;background:#e7a55b"></i>lit window = pushed this month</div>
+  </div>
+  <div class="card" id="cityCard" hidden></div>
+</section>
+
+<script src="/content/knowledge.js"></script>
+<script src="/assets/md.js"></script>
+<script src="/assets/map.js"></script>
+<script src="/assets/city.js"></script>
+<script src="/assets/build.js"></script>
+<script src="/assets/call.js"></script>
+<script src="/assets/app.js"></script>
+</body>
+</html>
