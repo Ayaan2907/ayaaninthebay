@@ -1,0 +1,30 @@
+{
+  "_comment": "What the billboards in /map show. 'blog' entries are refreshed by scripts/publish.mjs. Paste tweets/replies under 'x' and put stills under public img paths for 'instagram'. Later this moves to a DB.",
+  "x": [
+    {
+      "text": "cracked developer, shipping every day.",
+      "url": "https://x.com/ayaaninthebay",
+      "date": "2026-09-01"
+    },
+    {
+      "text": "moved to sf. terminal is the same, view is better.",
+      "url": "https://x.com/ayaaninthebay",
+      "date": "2026-09-05"
+    }
+  ],
+  "instagram": [
+    {
+      "caption": "first week in sf. filming the move for @ayaaninthebay.",
+      "img": "",
+      "url": "https://instagram.com/ayaaninthebay",
+      "date": "2026-09-06"
+    }
+  ],
+  "blog": [
+    {
+      "title": "why my site is a terminal",
+      "url": "/blog/why-a-terminal",
+      "date": "2026-09-08"
+    }
+  ]
+}

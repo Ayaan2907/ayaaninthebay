@@ -1,0 +1,14 @@
+[
+  { "name": "wingmic", "desc": "voice-first networking memory", "lang": "TypeScript", "stars": 12, "size": 4200, "pushed": "2026-09-06T00:00:00Z", "url": "https://github.com/Ayaan2907/wingmic" },
+  { "name": "auto-llm-selector", "desc": "semantic classifier routing prompts to the best llm", "lang": "TypeScript", "stars": 9, "size": 1800, "pushed": "2026-08-20T00:00:00Z", "url": "https://github.com/Ayaan2907/auto-llm-selector" },
+  { "name": "Multimodal-RAG-video-analysis", "desc": "video analysis pipeline", "lang": "TypeScript", "stars": 3, "size": 900, "pushed": "2026-07-10T00:00:00Z", "url": "https://github.com/Ayaan2907/Multimodal-RAG-video-analysis" },
+  { "name": "text-completion-AI-extension", "desc": "chrome extension for ai text completion", "lang": "TypeScript", "stars": 4, "size": 700, "pushed": "2026-05-02T00:00:00Z", "url": "https://github.com/Ayaan2907/text-completion-AI-extension" },
+  { "name": "advanced-ai-code-editor", "desc": "ai-enhanced code editor", "lang": "JavaScript", "stars": 2, "size": 1200, "pushed": "2026-03-14T00:00:00Z", "url": "https://github.com/Ayaan2907/advanced-ai-code-editor" },
+  { "name": "Visual-Attendence-Tracking", "desc": "attendance via vision", "lang": "Python", "stars": 1, "size": 500, "pushed": "2025-11-01T00:00:00Z", "url": "https://github.com/Ayaan2907/Visual-Attendence-Tracking" },
+  { "name": "ayaan-site", "desc": "this site", "lang": "JavaScript", "stars": 0, "size": 200, "pushed": "2026-09-08T00:00:00Z", "url": "https://github.com/Ayaan2907/ayaan-site" },
+  { "name": "standup-os", "desc": "standup outputs to tickets", "lang": "TypeScript", "stars": 0, "size": 300, "pushed": "2026-08-01T00:00:00Z", "url": "https://github.com/Ayaan2907/standup-os" },
+  { "name": "cs701-project", "desc": "subscription media platform (team)", "lang": "TypeScript", "stars": 0, "size": 800, "pushed": "2026-08-15T00:00:00Z", "url": "https://github.com/Ayaan2907" },
+  { "name": "data-science-assignments", "desc": "bayes, trees, k-means", "lang": "Python", "stars": 0, "size": 400, "pushed": "2026-04-01T00:00:00Z", "url": "https://github.com/Ayaan2907" },
+  { "name": "dotfiles", "desc": "", "lang": "Shell", "stars": 0, "size": 40, "pushed": "2026-02-01T00:00:00Z", "url": "https://github.com/Ayaan2907" },
+  { "name": "experiments", "desc": "", "lang": "Python", "stars": 0, "size": 120, "pushed": "2026-06-01T00:00:00Z", "url": "https://github.com/Ayaan2907" }
+]

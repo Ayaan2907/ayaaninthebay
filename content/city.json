@@ -1,0 +1,33 @@
+{
+  "_comment": "Layout of the /map city. Districts are chapters of Ayaan's life; buildings inside them are GitHub repos, placed automatically. Landmarks are hand-placed. Edit freely; the renderer reads this at open.",
+  "districts": [
+    { "id": "downtown",   "name": "downtown · advanceiq",     "x": 0,   "z": -34, "cols": 4, "rows": 3, "tint": "#c2631a", "match": ["aria", "advance", "advanceiq", "dax", "powerbi", "power-bi", "lendsas", "crm"] },
+    { "id": "mission",    "name": "mission · side projects",  "x": 46,  "z": 10,  "cols": 4, "rows": 3, "tint": "#2f7f6c", "match": ["wingmic", "wing", "auto-llm", "llm-selector", "selector", "extension", "rag", "video", "muvik", "workflow", "agent", "mcp"] },
+    { "id": "campus",     "name": "campus · school",          "x": -48, "z": 8,   "cols": 3, "rows": 3, "tint": "#6a6862", "match": ["assignment", "homework", "cs", "class", "course", "lab", "monroe", "michigan", "umich", "attendance", "student", "project-", "final", "hackathon"] },
+    { "id": "waterfront", "name": "waterfront · experiments", "x": 0,   "z": 48,  "cols": 5, "rows": 2, "tint": "#8a8883", "match": [] }
+  ],
+  "overrides": {
+    "Multimodal-RAG-video-analysis": "mission",
+    "text-completion-AI-extension": "mission",
+    "advanced-ai-code-editor": "waterfront",
+    "Visual-Attendence-Tracking": "campus",
+    "Ayaan2907": "waterfront"
+  },
+  "landmarks": [
+    { "id": "aiq",      "district": "downtown", "kind": "tower",   "label": "AdvanceIQ.ai", "sub": "sole engineer · oct 2025 → now", "h": 30, "w": 8, "d": 8, "url": "https://advanceiq.ai",
+      "body": "the day job. solo-built ARIA, an llm agent that lets merchant-cash-advance / revenue-based-finance clients query analytics in plain english. mastra + vercel ai sdk, next.js, custom sse." },
+    { "id": "wingmic",  "district": "mission",  "kind": "garage",  "label": "WingMic",      "sub": "side project · 2026", "h": 6, "w": 12, "d": 8, "url": "https://wingmic.xyz",
+      "body": "your social ram, on disk. speak for 10 to 30 seconds after meeting someone; an llm builds a knowledge graph you can query in plain english. has an mcp server so claude desktop and cursor can read it." },
+    { "id": "monroe",   "district": "campus",   "kind": "campus",  "label": "Monroe University", "sub": "m.s. computer science · 2026", "h": 9, "w": 14, "d": 10,
+      "body": "finishing the m.s. in computer science here. graduate coursework at the university of michigan in fall 2024 before that." },
+    { "id": "newsstand","district": "waterfront","kind": "kiosk",  "label": "blog", "sub": "/blog", "h": 4, "w": 5, "d": 4, "url": "/blog/",
+      "body": "build logs, takes on agents and tooling, notes from san francisco. also readable inside the terminal with /read <slug>." },
+    { "id": "dock",     "district": "waterfront","kind": "dock",   "label": "shipping dock", "sub": "github · live", "h": 3, "w": 16, "d": 6, "url": "https://github.com/ayaan2907",
+      "body": "every commit, pr and star from the last 90 days leaves the city through this dock. type /activity in the terminal for the list." }
+  ],
+  "billboards": [
+    { "id": "bb-x",    "district": "downtown",   "source": "x" },
+    { "id": "bb-ig",   "district": "mission",    "source": "instagram" },
+    { "id": "bb-blog", "district": "waterfront", "source": "blog" }
+  ]
+}
