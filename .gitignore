@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# env: only the example is tracked
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / os
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# agent dirs (per-developer)
+.claude/settings.local.json
+.claude/worktrees/
+.gstack/
+.cursor/
+
+# hosting leftovers
+.vercel/
+.railway/

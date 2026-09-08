@@ -1,0 +1,26 @@
+{
+  "name": "ayaan-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ayaan's personal site: an agent-session terminal, an ai that answers as me, sf at night as a map, /build and /call. one runtime dependency.",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env.local scripts/server.mjs",
+    "start": "node scripts/server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "publish": "node scripts/publish.mjs",
+    "index": "node scripts/publish.mjs --index-only"
+  },
+  "dependencies": {
+    "@heyputer/puter.js": "^2"
+  },
+  "engines": {
+    "node": ">=22.9"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ayaan2907/ayaan-site"
+  },
+  "license": "MIT"
+}
