@@ -1,0 +1,15 @@
+name: bug
+description: something on the site is broken
+labels: [bug]
+body:
+  - type: input
+    id: where
+    attributes: { label: where, placeholder: "/build, /map, /call, blog, terminal…" }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: what happened, description: "what you did, what you expected, what you got. a screenshot helps." }
+    validations: { required: true }
+  - type: input
+    id: browser
+    attributes: { label: browser + os }

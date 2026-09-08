@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: ask the site itself
+    url: https://ayaan.sh
+    about: the terminal answers most questions about me. bugs go here.
