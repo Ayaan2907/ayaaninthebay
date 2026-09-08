@@ -2,11 +2,19 @@
 
 railway runs one service from this repo. push to `main` deploys. this is the operator doc: first setup, secrets, rotation, rollback, and what to look at when it breaks.
 
+## where it is
+
+- github: <https://github.com/Ayaan2907/ayaan-site>, branch `main`
+- railway project `ayaan-site` (id `ab5ef996-9c8f-4b3a-8ca6-3366e081946c`), service `ayaan-site`, environment `production`
+- url until the custom domain lands: <https://ayaan-site-production.up.railway.app>
+
+the first deploy went up with `railway up` from the laptop (cli 5.x, `railway link` picks the project). auto-deploy from github needs the railway github app to see the repo once: railway dashboard → service → settings → source → connect repo → `Ayaan2907/ayaan-site`. after that, every push to `main` deploys and `railway up` is only for emergencies.
+
 ## first setup (once)
 
-1. railway → new project → deploy from github repo → `Ayaan2907/ayaan-site`, branch `main`.
+1. railway → new project → deploy from github repo → `Ayaan2907/ayaan-site`, branch `main`. (done; see above.)
 2. builder: railpack is picked up from `railway.json`. no build command; start command is `npm start`. healthcheck `/api/health`, 30 s.
-3. variables tab, minimum:
+3. variables tab, minimum (set):
 
    | var | value |
    |---|---|
@@ -53,6 +61,17 @@ nothing else references the token.
 ## rollback
 
 railway → deployments → pick the previous green deployment → redeploy. or `git revert` the commit and push; the deploy is under a minute.
+
+## cli cheatsheet
+
+```
+railway link                      # once per clone: picks project ayaan-site
+railway status                    # service state + url
+railway logs --service ayaan-site # runtime logs (json lines)
+railway variables --service ayaan-site --set BUILD_KILL=1   # emergency stop for /build
+railway up --service ayaan-site   # deploy the working tree without github
+railway domain                    # generate or list domains
+```
 
 ## when it breaks
 
