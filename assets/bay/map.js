@@ -132,7 +132,13 @@
 
   map.on("click", (e) => {
     const live = dotLayers.filter((l) => map.getLayer(l) && visible[l.replace("dot-", "")]);
-    const hits = map.queryRenderedFeatures(e.point, { layers: live });
+    const slop = 12; // px of forgiveness — dots are small, clicks (and fingers) miss
+    const box = [[e.point.x - slop, e.point.y - slop], [e.point.x + slop, e.point.y + slop]];
+    const hits = map.queryRenderedFeatures(box, { layers: live });
+    if (hits.length > 1) {
+      const dist = (f) => { const q = map.project(f.geometry.coordinates); return Math.hypot(q.x - e.point.x, q.y - e.point.y); };
+      hits.sort((a, b) => dist(a) - dist(b));
+    }
     if (hits.length) openCard(hits[0]); else clearCard();
   });
   document.addEventListener("keydown", (e) => {
