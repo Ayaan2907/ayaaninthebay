@@ -61,4 +61,9 @@ test("the bay map is its own surface, no shared runtime bundle", async () => {
   assert.match(term, /content\/knowledge\.js/, "terminal keeps knowledge");
   assert.doesNotMatch(term, /assets\/city\.js/, "terminal no longer bootstraps the city canvas");
   assert.match(term, /href="\/bay"/, "terminal links out to the map");
+  for (const old of ["/map", "/city"]) {
+    const r = await fetch(base + old, { redirect: "manual" });
+    assert.equal(r.status, 302, old + " redirects to the real map");
+    assert.equal(r.headers.get("location"), "/bay", old + " points at /bay");
+  }
 });

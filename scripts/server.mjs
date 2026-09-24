@@ -53,6 +53,7 @@ async function api(req, res, name) {
 function serveStatic(req, res, p) {
   if (/^\/blog\/[^/.]+\/?$/.test(p)) p = "/blog/post.html";
   if (p === "/bay" || p === "/bay/") p = "/bay.html";
+  if (p === "/map" || p === "/city") { res.statusCode = 302; res.setHeader("location", "/bay"); return res.end(); } // the old canvas-map urls land on the real map
   if (p === "/") p = "/index.html";
   if (p.endsWith("/")) p += "index.html";
   if (!PUBLIC.some((x) => p === "/" + x || p.startsWith("/" + x + "/"))) { res.statusCode = 404; return res.end("404"); }
