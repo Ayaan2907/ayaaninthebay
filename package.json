@@ -10,7 +10,9 @@
     "test": "node --test tests/*.test.mjs",
     "check": "node scripts/check.mjs",
     "publish": "node scripts/publish.mjs",
-    "index": "node scripts/publish.mjs --index-only"
+    "index": "node scripts/publish.mjs --index-only",
+    "ingest": "node scripts/ingest.mjs",
+    "ingest:dry": "node scripts/ingest.mjs --dry-run"
   },
   "dependencies": {
     "@heyputer/puter.js": "^2"

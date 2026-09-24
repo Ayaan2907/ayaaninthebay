@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { runIngest } from "./ingest.mjs";
 
 const require = createRequire(import.meta.url);
 const { ENV, describe } = require("../api/_env.js");
@@ -80,6 +81,18 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(ENV.port, () => log.info("listen", { url: `http://localhost:${ENV.port}`, ...describe() }));
+
+// bay data refresh. a railway cron service cannot share this container's filesystem
+// (volumes attach to one service), so the running server refreshes the store itself;
+// docs/deploy.md has the cron-service alternative for when the store moves to libsql.
+// off in dev unless INGEST_ENABLED=on.
+if (ENV.ingestEnabled === "on") {
+  const refresh = () => runIngest().catch((e) => log.error("ingest.timer", { err: e }));
+  const first = setTimeout(refresh, 10_000);
+  const timer = setInterval(refresh, ENV.ingestIntervalHours * 60 * 60 * 1000);
+  first.unref();
+  timer.unref();
+}
 
 for (const sig of ["SIGTERM", "SIGINT"]) {
   process.on(sig, () => { log.info("shutdown", { sig }); server.close(() => process.exit(0)); setTimeout(() => process.exit(0), 5000).unref(); });
