@@ -29,6 +29,8 @@
       ? ""
       : d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   };
+  // feature properties carry startsAt as a string; fmtWhen renders it human
+  const fmtDate = (p) => (p && p.startsAt) || "";
 
   /* ---------- the events layer ---------- */
 
@@ -210,7 +212,7 @@
 
     const meetHtml = (s.meet || [])
       .map(
-        (m) => `<div class="sc-meetrow"><b></b><span></span>${m.starter ? `<i class="sc-starter"></i>` : ""}</div>`,
+        (m) => `<div class="sc-meetrow"><b></b> <span></span>${m.starter ? `<i class="sc-starter"></i>` : ""}</div>`,
       )
       .join("");
 

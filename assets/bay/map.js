@@ -132,6 +132,7 @@
       id: "dot-events", type: "circle", source: "events",
       paint: { "circle-radius": 7, "circle-color": EVENT_COLOR, "circle-stroke-width": 2, "circle-stroke-color": PAPER() },
     });
+    dotLayers.push("dot-events"); // joins the click-to-open set: rendered dots must be clickable
     map.addLayer({
       id: "tag-events", type: "symbol", source: "events", minzoom: 11,
       layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 11, "text-offset": [0, 1.1], "text-anchor": "top" },
@@ -189,8 +190,10 @@
       hits.sort((a, b) => dist(a) - dist(b));
     }
     if (!hits.length) return clearCard();
-    // event dots hand the card to the scoring flow once it is loaded
-    if (hits[0].source === "events" && window.__bay.onEventClick) return window.__bay.onEventClick(hits[0]);
+    // events win ties: a place dot often sits at the same coordinates (stadiums, venues),
+    // and the click aimed at the event's own pixel
+    const eventHits = hits.filter((h) => h.source === "events");
+    if (eventHits.length && window.__bay.onEventClick) return window.__bay.onEventClick(eventHits[0]);
     openCard(hits[0]);
   });
   document.addEventListener("keydown", (e) => {
