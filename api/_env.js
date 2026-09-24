@@ -61,6 +61,11 @@ const ENV = Object.freeze({
   buildPerHour: int("BUILD_PER_HOUR", 3, { min: 1 }),
   buildDailyCap: int("BUILD_DAILY_CAP", 60, { min: 1 }),
 
+
+  // /api/score (the /bay event cards)
+  scorePerHour: int("SCORE_PER_HOUR", 30, { min: 1, max: 1000 }),
+  wingmicMock: oneOf("WINGMIC_MOCK", ["on", "off"], "off"),
+
   // /call
   ttsVoice: str("TTS_VOICE", "Matthew"),
   ttsPerHour: int("TTS_PER_HOUR", 240, { min: 1 }),
