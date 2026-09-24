@@ -29,6 +29,16 @@
   ];
   const CAT = Object.fromEntries(CATS.map((c) => [c.id, c]));
   const dotLayers = CATS.map((c) => `dot-${c.id}`);
+  // events are a layer of their own, fed from /api/events (the live store), not places.json.
+  const EVENT_COLOR = "#d95f5f";
+  // hud counts; the scoring flow (score.js) tops up the events side after its fetch resolves
+  const counts = { places: 0, events: 0, geo: 0 };
+  function renderHud() {
+    const bits = [`${counts.places} places`];
+    if (counts.events) bits.push(counts.geo === counts.events ? `${counts.events} events` : `${counts.geo} of ${counts.events} events on the map`);
+    bits.push(`${CATS.length + (counts.events ? 1 : 0)} layers`);
+    hud.textContent = bits.join(" · ");
+  }
 
   // free raster tiles, no key: openstreetmap standard for day, esri dark gray
   // canvas for night. both public; attribution stays on screen via the layers panel.
@@ -62,10 +72,11 @@
     attributionControl: false, // attribution lives in the layers panel, always on screen
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
-  window.__bay = { map }; // test hook: lets tooling project coordinates and drive the map
+  window.__bay = { map, addEvents }; // test hooks: project coordinates, drive the map, feed the events layer
 
   /* ---------- places: dots, labels, toggles ---------- */
   const visible = Object.fromEntries(CATS.map((c) => [c.id, true]));
+  visible.events = true;
   function addPlaces(gj) {
     map.addSource("places", { type: "geojson", data: gj });
     for (const c of CATS) {
@@ -114,6 +125,44 @@
     layersEl.hidden = false;
   }
 
+  /* ---------- events: dots from the live store, scored on click ---------- */
+  function addEvents(features, total = features.length) {
+    map.addSource("events", { type: "geojson", data: { type: "FeatureCollection", features } });
+    map.addLayer({
+      id: "dot-events", type: "circle", source: "events",
+      paint: { "circle-radius": 7, "circle-color": EVENT_COLOR, "circle-stroke-width": 2, "circle-stroke-color": PAPER() },
+    });
+    map.addLayer({
+      id: "tag-events", type: "symbol", source: "events", minzoom: 11,
+      layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Regular"], "text-size": 11, "text-offset": [0, 1.1], "text-anchor": "top" },
+      paint: { "text-color": INK(), "text-halo-color": PAPER(), "text-halo-width": 1.4 },
+    });
+    map.on("mouseenter", "dot-events", () => { map.getCanvas().style.cursor = "pointer"; });
+    map.on("mouseleave", "dot-events", () => { map.getCanvas().style.cursor = ""; });
+    addEventsRow(features.length, total);
+    counts.events = total;
+    counts.geo = features.length;
+    renderHud();
+  }
+
+  // the events row joins the place rows, above the attribution foot
+  function addEventsRow(count, total) {
+    const foot = layersEl.querySelector(".l-foot");
+    if (!foot) return;
+    const row = document.createElement("label");
+    row.className = "l-row";
+    row.setAttribute("data-cat", "events");
+    row.innerHTML = `<input type="checkbox" checked><i class="dot" style="background:${EVENT_COLOR}"></i>events<span class="count">${count}${total > count ? ` of ${total}` : ""}</span>`;
+    foot.insertAdjacentElement("beforebegin", row);
+    row.querySelector("input").addEventListener("change", (e) => {
+      visible.events = e.target.checked;
+      row.classList.toggle("off", !visible.events);
+      const v = visible.events ? "visible" : "none";
+      if (map.getLayer("dot-events")) map.setLayoutProperty("dot-events", "visibility", v);
+      if (map.getLayer("tag-events")) map.setLayoutProperty("tag-events", "visibility", v);
+    });
+  }
+
   /* ---------- the narrative card ---------- */
   function openCard(f) {
     const p = f.properties;
@@ -139,7 +188,10 @@
       const dist = (f) => { const q = map.project(f.geometry.coordinates); return Math.hypot(q.x - e.point.x, q.y - e.point.y); };
       hits.sort((a, b) => dist(a) - dist(b));
     }
-    if (hits.length) openCard(hits[0]); else clearCard();
+    if (!hits.length) return clearCard();
+    // event dots hand the card to the scoring flow once it is loaded
+    if (hits[0].source === "events" && window.__bay.onEventClick) return window.__bay.onEventClick(hits[0]);
+    openCard(hits[0]);
   });
   document.addEventListener("keydown", (e) => {
     if (e.target && /input|textarea/i.test(e.target.tagName)) return;
@@ -156,11 +208,11 @@
       map.setLayoutProperty("raster-light", "visibility", dark ? "none" : "visible");
       map.setLayoutProperty("raster-dark", "visibility", dark ? "visible" : "none");
     }
-    for (const c of CATS) {
-      if (map.getLayer(`dot-${c.id}`)) map.setPaintProperty(`dot-${c.id}`, "circle-stroke-color", PAPER());
-      if (map.getLayer(`tag-${c.id}`)) {
-        map.setPaintProperty(`tag-${c.id}`, "text-color", INK());
-        map.setPaintProperty(`tag-${c.id}`, "text-halo-color", PAPER());
+    for (const c of [...CATS.map((x) => x.id), "events"]) {
+      if (map.getLayer(`dot-${c}`)) map.setPaintProperty(`dot-${c}`, "circle-stroke-color", PAPER());
+      if (map.getLayer(`tag-${c}`)) {
+        map.setPaintProperty(`tag-${c}`, "text-color", INK());
+        map.setPaintProperty(`tag-${c}`, "text-halo-color", PAPER());
       }
     }
   }
@@ -177,7 +229,8 @@
       .then((gj) => {
         addPlaces(gj);
         buildToggles(gj);
-        hud.textContent = `${gj.features.length} places · ${CATS.length} layers`;
+        counts.places = gj.features.length;
+        renderHud();
       })
       .catch((err) => {
         // never swallow it: the map still pans and zooms, the dots just do not show

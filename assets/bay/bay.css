@@ -131,3 +131,77 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .map .hud { left: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .map .card { animation: none; } }
+
+/* ---------- the score card (click an event dot) ---------- */
+.sc-card {
+  position: fixed; left: 18px; bottom: 18px; z-index: 40; width: min(430px, calc(100vw - 36px));
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; box-shadow: 0 12px 40px rgba(0,0,0,.18);
+  font-size: var(--fs); animation: cardIn .18s ease-out;
+}
+.sc-card .sc-x {
+  position: absolute; top: 8px; right: 10px; border: 0; background: none; color: var(--fg-mute);
+  font-size: 1em; cursor: pointer; padding: 2px 6px;
+}
+.sc-card .sc-x:hover { color: var(--fg); }
+.sc-card .sc-kicker { color: var(--fg-mute); font-family: var(--mono); font-size: .8em; letter-spacing: .08em; text-transform: lowercase; }
+.sc-card .sc-kicker::before { content: "» "; color: var(--accent); }
+.sc-card .sc-title { color: var(--fg); font-weight: 600; margin: 2px 0 2px; font-size: 1.1em; line-height: 1.35; }
+.sc-card .sc-when { color: var(--fg-dim); font-size: .88em; margin-bottom: 10px; }
+.sc-card .sc-pane[hidden] { display: none; }
+.sc-card .sc-ask p { color: var(--fg-dim); margin: 0 0 10px; }
+.sc-card .sc-ask input {
+  width: 100%; margin-bottom: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg-2); color: var(--fg); font: inherit;
+}
+.sc-card .sc-ask input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--sel); }
+.sc-card .sc-go, .sc-card .sc-demo, .sc-card .sc-again {
+  border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--fg);
+  font: inherit; padding: 7px 14px; cursor: pointer;
+}
+.sc-card .sc-go { border-color: var(--accent); color: var(--accent); }
+.sc-card .sc-go:hover { background: var(--sel); }
+.sc-card .sc-demo { margin-left: 8px; color: var(--fg-dim); }
+.sc-card .sc-demo:hover { color: var(--fg); }
+.sc-card .sc-note { color: var(--fg-mute); font-size: .82em; margin-top: 8px; min-height: 1em; }
+.sc-card .sc-loading { color: var(--fg-dim); font-family: var(--mono); font-size: .9em; padding: 10px 0 2px; }
+.sc-card .sc-spin {
+  display: inline-block; width: 10px; height: 10px; margin-right: 8px; border: 2px solid var(--line);
+  border-top-color: var(--accent); border-radius: 50%; animation: scSpin .8s linear infinite;
+}
+@keyframes scSpin { to { transform: rotate(360deg); } }
+.sc-card .sc-verdict { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.sc-card .sc-verdict b { font-size: 1.7em; font-family: var(--mono); }
+.sc-card .sc-verdict span { color: var(--fg); text-transform: lowercase; letter-spacing: .04em; }
+.sc-card .sc-verdict em { color: var(--fg-mute); font-style: normal; font-size: .78em; margin-left: auto; }
+.sc-card .sc-good b { color: var(--accent-2); }
+.sc-card .sc-mid b { color: var(--accent); }
+.sc-card .sc-bad b { color: #b3403a; }
+.sc-card .sc-bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; margin-bottom: 10px; }
+.sc-card .sc-bar i { display: block; height: 100%; border-radius: 2px; background: var(--fg-mute); transition: width .5s ease; }
+.sc-card .sc-good + .sc-bar i { background: var(--accent-2); }
+.sc-card .sc-mid + .sc-bar i { background: var(--accent); }
+.sc-card .sc-bad + .sc-bar i { background: #b3403a; }
+.sc-card .sc-outcome { color: var(--fg); margin-bottom: 8px; }
+.sc-card .sc-reasons { margin: 0 0 10px; padding-left: 18px; color: var(--fg-dim); }
+.sc-card .sc-reasons li { margin: 2px 0; }
+.sc-card .sc-reasons li::marker { color: var(--accent); }
+.sc-card .sc-meet { border-top: 1px solid var(--line); padding-top: 8px; }
+.sc-card .sc-meet > b { color: var(--fg-mute); font-size: .8em; letter-spacing: .08em; text-transform: lowercase; display: block; margin-bottom: 6px; }
+.sc-card .sc-meetrow { margin: 6px 0; color: var(--fg-dim); font-size: .92em; }
+.sc-card .sc-meetrow b { color: var(--fg); }
+.sc-card .sc-meetrow .sc-starter { display: block; font-style: italic; color: var(--fg-mute); margin-top: 2px; }
+.sc-card .sc-link { color: var(--accent-2); font-size: .9em; }
+.sc-card .sc-link:hover { color: var(--accent); }
+.sc-card .sc-meta { color: var(--fg-mute); font-size: .78em; font-family: var(--mono); margin-top: 10px; }
+.sc-card .sc-error p { color: var(--fg-dim); margin: 0 0 10px; }
+.sc-card .sc-error::before { content: "✕ "; color: #b3403a; }
+
+@media (max-width: 760px) {
+  .sc-card { left: 12px; right: 12px; bottom: 12px; width: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-card { animation: none; }
+  .sc-card .sc-bar i { transition: none; }
+  .sc-card .sc-spin { animation-duration: 1.6s; }
+}
