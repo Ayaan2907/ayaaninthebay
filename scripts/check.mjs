@@ -53,7 +53,7 @@ for (const m of envJs.matchAll(/\b(?:int|oneOf|str)\("([A-Z0-9_]+)"/g)) {
 
 // 5. banned words in visitor-facing copy (UNSLOP)
 const BANNED = /\b(delve|robust|seamless|cutting-edge|leverage|comprehensive|game-changer|revolutionary|supercharge)\b/i;
-for (const f of ["index.html", "blog/index.html", "blog/post.html", "content/knowledge.js"]) {
+for (const f of ["index.html", "bay.html", "blog/index.html", "blog/post.html", "content/knowledge.js"]) {
   const s = fs.readFileSync(path.join(ROOT, f), "utf8");
   const m = BANNED.exec(s);
   if (m) problems.push(`${f}: banned word "${m[0]}"`);

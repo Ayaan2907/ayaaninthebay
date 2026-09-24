@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ayaan in the bay — san francisco, live</title>
+<meta name="description" content="san francisco at night as a living map: districts are chapters, buildings are repos, vans are commits. click a building, then ask the terminal about it.">
+<meta property="og:title" content="ayaan in the bay">
+<meta property="og:description" content="san francisco at night as a living map.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:site" content="@ayaaninthebay">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23faf9f6'/%3E%3Ctext x='7' y='23' font-family='monospace' font-size='18' fill='%23c2631a'%3E%E2%9D%AF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/assets/bay/bay.css">
+<script>
+  // theme before paint (light default; respect a saved choice)
+  try { var t = localStorage.getItem("theme"); if (t === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) {}
+</script>
+</head>
+<body>
+<!-- the bay : sf at night, its own surface -->
+<section class="map city" id="city">
+  <div class="bar">
+    <div class="t">✻ <b>bay</b> <span class="hint">drag · scroll · click a building · <kbd>n</kbd> night · <kbd>/</kbd> find</span></div>
+    <div class="q"><span>❯</span><input id="cityQuery" placeholder="find a repo, a district, a language…" spellcheck="false" autocomplete="off"></div>
+    <div class="r"><button id="cityNight">n · night</button><a href="/" title="back to the terminal">← terminal</a></div>
+  </div>
+  <canvas id="cityCanvas"></canvas>
+  <div class="hud" id="cityHud">building the city…</div>
+  <div class="legend">
+    <div><i style="border-color:var(--accent);background:var(--accent)"></i>landmark</div>
+    <div><i style="border-color:var(--fg-mute)"></i>repo · height = size + stars</div>
+    <div><i style="border-color:var(--accent-2);background:var(--accent-2)"></i>van = a github event</div>
+    <div><i style="border-color:#e7a55b;background:#e7a55b"></i>lit window = pushed this month</div>
+  </div>
+  <div class="card" id="cityCard" hidden></div>
+</section>
+
+<script src="/assets/bay/city.js"></script>
+</body>
+</html>

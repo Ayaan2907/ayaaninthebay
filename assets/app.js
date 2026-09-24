@@ -92,7 +92,7 @@
     ["/sf", "new in san francisco"],
     ["/links", "github, x, linkedin, instagram…"],
     ["/contact", "how to reach me"],
-    ["/map", "sf at night: my repos as a living city"],
+    ["/map", "the bay map, its own surface (opens /bay)"],
     ["/build", "hey ayaan, build me <this>. a real app, shipped live"],
     ["/call", "voice call with the ai version of me"],
     ["/graph", "graph of me (the old map)"],
@@ -176,9 +176,9 @@
         }
         break;
       }
-      case "/map": case "/sf": case "/city":
-        await toolCall("Bash", "gh api users/ayaan2907/repos | ./build-city --sf --live", `<span class="dim">laying out the city…</span>`, 120);
-        window.CITY.open();
+      case "/map": case "/city":
+        await toolCall("Bash", "open /bay", `<span class="dim">the map lives at <a href="/bay">/bay</a> now — taking you there…</span>`, 120);
+        location.href = "/bay";
         break;
       case "/call": case "/talk": case "/live": case "/voice":
         await window.CALL.start({ tool, result, agent, error, wait, user });
@@ -352,7 +352,7 @@
   form.addEventListener("submit", (e) => { e.preventDefault(); submit(input.value); });
   document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); input.focus(); }
-    if (e.key === "/" && document.activeElement !== input && !window.MAP.isOpen() && !window.CITY.isOpen()) { e.preventDefault(); input.focus(); input.value = "/"; showMenu(); }
+    if (e.key === "/" && document.activeElement !== input && !window.MAP.isOpen()) { e.preventDefault(); input.focus(); input.value = "/"; showMenu(); }
   });
   document.addEventListener("click", (e) => {
     if (e.target.closest(".cmdlink")) submit("/help");
@@ -360,7 +360,6 @@
     if (!getSelection().toString()) input.focus();
   });
   $("#themeBtn").onclick = () => submit("/theme");
-  $("#mapBtn").onclick = () => submit("/map");
 
   // clock
   function tick() { $("#clock").textContent = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/Los_Angeles" }).toLowerCase() + " pt"; }

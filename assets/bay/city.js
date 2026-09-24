@@ -1,10 +1,17 @@
-/* /map: san francisco at night. a small low-poly city drawn with a hand-rolled
+/* /bay: san francisco at night. a small low-poly city drawn with a hand-rolled
    3d renderer on canvas 2d (perspective projection, painter's sort, flat shading,
    depth fog). districts are chapters of my life, buildings are github repos,
    vans are commits leaving for the dock, weather and daylight are real.
-   scene = plain lists of boxes, so a three.js renderer can replace draw() later. */
+   scene = plain lists of boxes, so a three.js renderer can replace draw() later.
+   standalone surface: loads nothing from the terminal. deep links back via /?q=. */
 (function () {
-  const K = window.KNOWLEDGE;
+  // links the billboards point at. the map surface owns its own copy; the
+  // terminal keeps knowledge.js and the two never load each other.
+  const LINKS = {
+    x: "https://x.com/ayaaninthebay",
+    instagram: "https://instagram.com/ayaaninthebay",
+    blog: "/blog/",
+  };
   const root = document.getElementById("city");
   const cv = document.getElementById("cityCanvas");
   const card = document.getElementById("cityCard");
@@ -82,7 +89,7 @@
       const d = districts.find((x) => x.id === b.district); if (!d) continue;
       const lot = take(d, (l) => l.c === d.cols - 1 ? 2 : 0); if (!lot) continue;
       const items = bb[b.source] || [];
-      boards.push({ id: b.id, source: b.source, items, i: 0, x: lot.x, z: lot.z, w: 8.5, h: 5, y: 6, district: d, label: b.source === "x" ? "@ayaaninthebay" : b.source === "instagram" ? "instagram" : "blog", url: b.source === "x" ? K.links.x : b.source === "instagram" ? K.links.instagram : "/blog/" });
+      boards.push({ id: b.id, source: b.source, items, i: 0, x: lot.x, z: lot.z, w: 8.5, h: 5, y: 6, district: d, label: b.source === "x" ? "@ayaaninthebay" : b.source === "instagram" ? "instagram" : "blog", url: b.source === "x" ? LINKS.x : b.source === "instagram" ? LINKS.instagram : LINKS.blog });
     }
     // repos → districts
     const score = (r) => Math.log10((r.size || 0) + 10) + (r.stars || 0) * 0.35 + (daysAgo(r.pushed) < 30 ? 0.8 : 0);
@@ -258,7 +265,7 @@
     // hud text
     const hr = sfHour(); const hh = Math.floor(hr), mm = Math.floor((hr - hh) * 60); const ampm = hh >= 12 ? "pm" : "am";
     hud.textContent = `sf · ${((hh + 11) % 12) + 1}:${String(mm).padStart(2, "0")} ${ampm}${weather.tempF != null ? " · " + weather.tempF + "°f" : ""}${weather.fog > 0.8 ? " · fog" : weather.rain ? " · rain" : weather.cloud > 60 ? " · overcast" : ""} · ${buildings.filter((b) => b.kind === "repo").length} repos · ${cars.filter((c) => c.van).length} deliveries`;
-    raf = root.hidden ? null : requestAnimationFrame(frame);
+    raf = requestAnimationFrame(frame);
   }
   const matches = (b) => { if (!query) return true; const q = query.toLowerCase(); return (b.label + " " + (b.sub || "") + " " + (b.body || "") + " " + b.district.name).toLowerCase().includes(q); };
 
@@ -284,18 +291,21 @@
   function select(b) {
     sel = b;
     const isBoard = !!b.items; const title = isBoard ? b.label : b.label; const sub = isBoard ? (b.items.length + " posts") : b.sub || b.district.name;
-    const body = isBoard ? b.items.map((it) => `- ${esc(it.text || it.caption || it.title || "")}${it.date ? " (" + it.date + ")" : ""}`).join("\n") : (b.body || (b.kind === "repo" ? "a repo. height is size and stars, lit windows mean commits in the last month." : ""));
-    card.innerHTML = `<div class="k">${esc(isBoard ? "billboard" : b.landmark ? b.kind : "repo · " + b.district.name)}</div><div class="n">${esc(title)}</div><div class="k" style="margin-bottom:6px">${esc(sub)}</div><div class="b">${window.MD.render(body)}</div><div class="actions">${b.url ? `<a href="${b.url}" ${/^https?:/.test(b.url) ? 'target="_blank" rel="noopener"' : ""}>open →</a>` : ""}<button data-ask>ask in terminal</button></div>`;
+    // board items are escaped at build time; everything else is raw text
+    const bodyHTML = isBoard
+      ? b.items.map((it) => `- ${esc(it.text || it.caption || it.title || "")}${it.date ? " (" + it.date + ")" : ""}`).join("<br>")
+      : esc(b.body || (b.kind === "repo" ? "a repo. height is size and stars, lit windows mean commits in the last month." : "")).replace(/\n/g, "<br>");
+    const ask = b.id === "dock" ? "/activity" : b.id === "newsstand" ? "/blog" : `tell me about ${b.label}`;
+    card.innerHTML = `<div class="k">${esc(isBoard ? "billboard" : b.landmark ? b.kind : "repo · " + b.district.name)}</div><div class="n">${esc(title)}</div><div class="k" style="margin-bottom:6px">${esc(sub)}</div><div class="b">${bodyHTML}</div><div class="actions">${b.url ? `<a href="${b.url}" ${/^https?:/.test(b.url) ? 'target="_blank" rel="noopener"' : ""}>open →</a>` : ""}<a href="/?q=${encodeURIComponent(ask)}">ask in terminal</a></div>`;
     card.hidden = false;
-    card.querySelector("[data-ask]").onclick = () => { close(); window.TERM.submit(b.id === "dock" ? "/activity" : b.id === "newsstand" ? "/blog" : `tell me about ${b.label}`); };
     want.tx = b.x; want.tz = b.z; want.dist = Math.min(want.dist, 90);
   }
   function clearSel() { sel = null; card.hidden = true; }
   qInput.addEventListener("input", () => { query = qInput.value.trim(); });
-  qInput.addEventListener("keydown", (e) => { if (e.key === "Enter" && query) { const q = query; close(); window.TERM.submit(q); } if (e.key === "Escape") { qInput.value = ""; query = ""; qInput.blur(); } e.stopPropagation(); });
+  qInput.addEventListener("keydown", (e) => { if (e.key === "Enter") qInput.blur(); if (e.key === "Escape") { qInput.value = ""; query = ""; qInput.blur(); } e.stopPropagation(); });
   document.addEventListener("keydown", (e) => {
-    if (root.hidden || document.activeElement === qInput) return;
-    if (e.key === "Escape") { if (sel) clearSel(); else close(); }
+    if (document.activeElement === qInput) return;
+    if (e.key === "Escape") { if (sel) clearSel(); }
     if (e.key === "/") { e.preventDefault(); qInput.focus(); }
     if (e.key === "n") { night = night === true ? false : night === false ? null : true; }
     if (e.key === "r") { want = { yaw: 0.7, pitch: 0.62, dist: 170, tx: 0, tz: 8 }; clearSel(); }
@@ -303,18 +313,12 @@
     if (e.key === "-") want.dist = Math.min(300, want.dist * 1.18);
   });
   document.getElementById("cityNight").onclick = () => { night = night === true ? false : night === false ? null : true; };
-  document.getElementById("cityClose").onclick = () => close();
   function resize() { dpr = Math.min(2, devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
-  window.addEventListener("resize", () => { if (!root.hidden) resize(); });
+  window.addEventListener("resize", resize);
   new MutationObserver(colors).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-  async function open() {
-    root.hidden = false; document.body.style.overflow = "hidden"; colors(); resize();
-    if (!built) { hud.textContent = "building the city…"; await build(); loadWeather(); }
-    cam = { yaw: 0.7, pitch: 0.62, dist: 260, tx: 0, tz: 8 }; want = { yaw: 0.7, pitch: 0.62, dist: window.innerWidth < 600 ? 210 : 170, tx: 0, tz: 8 };
-    t0 = 0; last = 0; if (!raf) raf = requestAnimationFrame(frame);
-    history.replaceState(null, "", "#map"); setTimeout(() => qInput.blur(), 0);
-  }
-  function close() { root.hidden = true; document.body.style.overflow = ""; clearSel(); if (raf) { cancelAnimationFrame(raf); raf = null; } history.replaceState(null, "", location.pathname); document.getElementById("input").focus(); }
-  window.CITY = { open, close, isOpen: () => !root.hidden };
+  /* ---------- boot: the bay is the page, no overlay ---------- */
+  colors(); resize();
+  cam = { yaw: 0.7, pitch: 0.62, dist: 260, tx: 0, tz: 8 }; want = { yaw: 0.7, pitch: 0.62, dist: window.innerWidth < 600 ? 210 : 170, tx: 0, tz: 8 };
+  build().then(() => { built = true; loadWeather(); if (!raf) raf = requestAnimationFrame(frame); });
 })();

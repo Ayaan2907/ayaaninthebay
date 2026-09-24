@@ -3,8 +3,10 @@
 | path | role |
 |---|---|
 | `index.html` | the terminal (single-page entry) |
+| `bay.html` | /bay — the map surface, own entry point |
 | `assets/app.js` | terminal ui, commands, routing to ai / build / call |
-| `assets/city.js` | /map — hand-rolled canvas 3d of sf |
+| `assets/bay/city.js` | /bay — hand-rolled canvas 3d of sf, standalone bundle |
+| `assets/bay/bay.css` | /bay styles, shared nothing with the terminal |
 | `assets/build.js` | /build client — step stream, previews, follow-ups, visitor mode |
 | `assets/call.js` | /call client — speech recognition, tts queue, interruption |
 | `assets/map.js` | /graph — older orbit + timeline view |
