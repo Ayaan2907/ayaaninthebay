@@ -193,6 +193,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .sc-card .sc-claim b { font-size: .95em; }
 .sc-card .sc-claim p { color: var(--fg-dim); font-size: .88em; margin: 6px 0 10px; }
 .sc-card .sc-claim-row { display: flex; gap: 8px; }
+.sc-card .sc-claim-row[hidden], .sc-card .sc-claim a[hidden] { display: none; } /* display:flex/inline-block beats the ua [hidden] rule, same trap as .sc-pane[hidden] */
 .sc-card .sc-claim-row input {
   flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
   background: var(--bg-2); color: var(--fg); font: inherit;

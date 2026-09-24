@@ -259,10 +259,13 @@
         }
         sessionStorage.setItem(TOKEN_KEY, key);
         box.querySelector(".sc-claim-row").hidden = true;
+        box.querySelector("p").hidden = true;
+        box.querySelector(".sc-claim-link").hidden = true;
+        box.querySelector("b").textContent = "profile claimed";
         go.hidden = true;
         note.classList.add("sc-ok");
         note.textContent = j.captured
-          ? "claimed — this profile now lives in your wingmic graph, and the rest of this map scores against your network."
+          ? "this profile now lives in your wingmic graph — the rest of this map scores against your network."
           : j.note || "linked — the rest of this map scores against your network.";
       } catch (e) {
         note.textContent = e instanceof TypeError ? "could not reach the scorer. check your connection." : "that did not work. try again.";
