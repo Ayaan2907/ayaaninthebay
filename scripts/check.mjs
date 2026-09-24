@@ -31,6 +31,7 @@ try {
   const city = json("content/city.json"); if (!Array.isArray(city.districts)) problems.push("content/city.json: districts missing");
   const pb = json("content/playbook.json"); if (!Array.isArray(pb.pipeline) || !pb.commit || !pb.commit.format) problems.push("content/playbook.json: pipeline/commit missing");
   const bb = json("content/billboards.json"); for (const k of ["x", "instagram", "blog"]) if (!Array.isArray(bb[k])) problems.push(`content/billboards.json: ${k} missing`);
+  const places = json("assets/bay/places.json"); if (!Array.isArray(places.features) || !places.features.length) problems.push("assets/bay/places.json: features missing");
   const posts = json("posts/index.json"); if (!Array.isArray(posts)) problems.push("posts/index.json: not an array");
 } catch (e) { problems.push("json: " + e.message); }
 

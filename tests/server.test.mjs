@@ -54,6 +54,7 @@ test("the bay map is its own surface, no shared runtime bundle", async () => {
   assert.match(bay, /assets\/bay\/bay\.css/, "bay styles are its own");
   assert.equal((await fetch(base + "/bay/")).status, 200, "trailing slash works");
   assert.equal((await fetch(base + "/assets/bay/map.js")).status, 200, "map bundle is served");
+  assert.equal((await fetch(base + "/assets/bay/places.json")).status, 200, "places data is served");
   assert.match(bay, /maplibre/, "the map loads maplibre from a cdn");
   assert.match(bay, /assets\/bay\/map\.js/, "bay bootstraps the real map");
   assert.doesNotMatch(bay, /cityCanvas/, "the canvas city is gone from /bay");
