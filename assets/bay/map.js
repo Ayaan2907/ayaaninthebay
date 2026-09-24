@@ -1,6 +1,8 @@
-/* /bay: the bay area as a real map. maplibre gl from a cdn, raster tiles from
-   carto (openstreetmap data, no key, no build step). places and their notes
-   live in /assets/bay/places.json; every dot carries a first-person note.
+/* /bay: the bay area as a real map. maplibre gl from a cdn, free raster tiles
+   with no key and no build step: openstreetmap standard for day, esri dark
+   gray canvas for night (carto's legacy raster urls now answer with an
+   "api key required" watermark, so they are out). places and their notes live
+   in /assets/bay/places.json; every dot carries a first-person note.
    standalone surface: loads nothing from the terminal. deep links back via /?q=. */
 (function () {
   const hud = document.getElementById("bayHud");
@@ -17,7 +19,7 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // layer catalog: id, label, dot color. colors read on both carto light and dark tiles.
+  // layer catalog: id, label, dot color. colors read on both tile styles.
   const CATS = [
     { id: "startup", label: "startups", color: "#e7a55b" },
     { id: "office", label: "offices", color: "#8a8883" },
@@ -28,19 +30,20 @@
   const CAT = Object.fromEntries(CATS.map((c) => [c.id, c]));
   const dotLayers = CATS.map((c) => `dot-${c.id}`);
 
-  // carto raster basemaps: light_all for day, dark_all for night. openstreetmap data, no key.
+  // free raster tiles, no key: openstreetmap standard for day, esri dark gray
+  // canvas for night. both public; attribution stays on screen via the layers panel.
   const isDark = () => document.documentElement.getAttribute("data-theme") === "dark";
-  const cartoTiles = (dark) => ["a", "b", "c", "d"].map((s) => `https://${s}.basemaps.cartocdn.com/${dark ? "dark_all" : "light_all"}/{z}/{x}/{y}.png`);
+  const OSM = ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"];
+  const ESRI_DARK = ["https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"];
   const PAPER = () => (isDark() ? "#0b0b0c" : "#faf9f6");
   const INK = () => (isDark() ? "#e8e6e1" : "#1a1a18");
-  const ATTRIB = "© openstreetmap contributors © carto";
   function styleFor() {
     return {
       version: 8,
       glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
       sources: {
-        "tiles-light": { type: "raster", tiles: cartoTiles(false), tileSize: 256, attribution: ATTRIB },
-        "tiles-dark": { type: "raster", tiles: cartoTiles(true), tileSize: 256, attribution: ATTRIB },
+        "tiles-light": { type: "raster", tiles: OSM, tileSize: 256, maxzoom: 19, attribution: "© openstreetmap contributors" },
+        "tiles-dark": { type: "raster", tiles: ESRI_DARK, tileSize: 256, maxzoom: 16, attribution: "© esri" },
       },
       layers: [
         { id: "paper", type: "background", paint: { "background-color": PAPER() } },
@@ -50,11 +53,11 @@
     };
   }
 
-  // sf pulled south so the whole bay fits the first screen: marin down to the south bay
+  // sf in the upper half of the frame, the south bay still on screen
   const map = new maplibregl.Map({
     container: "bayMap",
-    center: [-122.27, 37.63],
-    zoom: 10.55,
+    center: [-122.3, 37.67],
+    zoom: 10.3,
     style: styleFor(),
     attributionControl: false, // attribution lives in the layers panel, always on screen
   });
@@ -96,7 +99,7 @@
       CATS.map((c) =>
         `<label class="l-row" data-cat="${c.id}"><input type="checkbox" checked><i class="dot" style="background:${c.color}"></i>${c.label}<span class="count">${counts[c.id] || 0}</span></label>`
       ).join("") +
-      `<div class="l-foot">tiles © openstreetmap contributors © carto · maplibre gl</div>`;
+      `<div class="l-foot">tiles © openstreetmap contributors · © esri · maplibre gl</div>`;
     for (const row of layersEl.querySelectorAll(".l-row")) {
       const id = row.getAttribute("data-cat");
       row.querySelector("input").addEventListener("change", (e) => {
