@@ -2,6 +2,8 @@
 // Validated once at first require; a bad value fails loudly at boot, not on the first request.
 // Every var is documented in .env.example. Keep the two in sync.
 
+const path = require("node:path");
+
 const int = (name, fallback, { min = 0, max = 1e6 } = {}) => {
   const raw = process.env[name];
   if (raw == null || raw === "") return fallback;
@@ -32,8 +34,13 @@ const buildMode = process.env.BUILD_KILL === "1"
   : oneOf("BUILD_MODE", ["owner", "visitor", "off"], PUTER_AUTH_TOKEN ? "owner" : "visitor");
 if (buildMode === "owner" && !PUTER_AUTH_TOKEN) throw new Error("env BUILD_MODE=owner needs PUTER_AUTH_TOKEN");
 
+const nodeEnv = oneOf("NODE_ENV", ["development", "production", "test"], "development");
+// bay ingest: on by default in production (the store is per-container and needs the
+// refresh), off in dev so `npm run dev` never calls out to event apis unasked.
+const ingestEnabled = oneOf("INGEST_ENABLED", ["on", "off"], nodeEnv === "production" ? "on" : "off");
+
 const ENV = Object.freeze({
-  nodeEnv: oneOf("NODE_ENV", ["development", "production", "test"], "development"),
+  nodeEnv,
   port: int("PORT", 3000, { min: 1, max: 65535 }),
   siteUrl: str("SITE_URL", "https://ayaan.sh"),
   logLevel: oneOf("LOG_LEVEL", ["debug", "info", "warn", "error"], "info"),
@@ -61,6 +68,12 @@ const ENV = Object.freeze({
   // github
   githubUser: str("GITHUB_USER", "Ayaan2907"),
   githubToken: str("GITHUB_TOKEN"),
+
+  // bay data (/api/events, /api/places, scripts/ingest.mjs)
+  dataDir: str("DATA_DIR", path.resolve(__dirname, "..", "data")),
+  ingestEnabled,
+  ingestIntervalHours: int("INGEST_INTERVAL_HOURS", 6, { min: 1, max: 168 }),
+  lumaCities: str("LUMA_CITIES", "sf"),
 });
 
 // Safe to print: secrets are reported as present/absent only.
@@ -69,6 +82,7 @@ function describe() {
     nodeEnv: ENV.nodeEnv, port: ENV.port, chatProvider: ENV.chatProvider, chatModel: ENV.chatModel,
     buildMode: ENV.buildMode, buildModel: ENV.buildModel, ttsVoice: ENV.ttsVoice,
     puter: ENV.puterAuthToken ? "set" : "missing", anthropic: ENV.anthropicApiKey ? "set" : "missing", github: ENV.githubToken ? "set" : "missing",
+    ingest: ENV.ingestEnabled, dataDir: ENV.dataDir,
   };
 }
 

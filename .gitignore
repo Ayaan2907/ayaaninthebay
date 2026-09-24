@@ -26,3 +26,7 @@ npm-debug.log*
 # hosting leftovers
 .vercel/
 .railway/
+
+# bay data store (runtime, rebuilt from data/seed + scripts/ingest.mjs; the seed is tracked)
+data/events.json
+data/places.json
