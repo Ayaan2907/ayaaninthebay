@@ -147,10 +147,21 @@ before(async () => {
   const root = new URL("..", import.meta.url).pathname;
   const writeStore = (dir) =>
     fs.writeFileSync(path.join(dir, "events.json"), JSON.stringify({ updatedAt: iso(NOW), records: [bay.normalizeRecord(HACK_EVENT).record] }));
+  // os-assigned port per server: math.random ranges collide across test files running in
+  // parallel (each spawns real servers), and a collision silently strands a base url
+  const freePort = () =>
+    new Promise((resolve, reject) => {
+      const probe = http.createServer();
+      probe.listen(0, "127.0.0.1", () => {
+        const port = probe.address().port;
+        probe.close(() => resolve(port));
+      });
+      probe.on("error", reject);
+    });
   const boot = async (extra) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bay-link-"));
     writeStore(dir);
-    const port = 4800 + Math.floor(Math.random() * 300);
+    const port = await freePort();
     const proc = spawn(process.execPath, ["scripts/server.mjs"], {
       env: { PATH: process.env.PATH, PORT: String(port), LOG_LEVEL: "error", DATA_DIR: dir, NODE_ENV: "production", INGEST_ENABLED: "off", ...extra },
       cwd: root,

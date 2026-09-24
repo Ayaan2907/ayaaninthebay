@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env.local scripts/server.mjs",
     "start": "node scripts/server.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "check": "node scripts/check.mjs",
     "publish": "node scripts/publish.mjs",
     "index": "node scripts/publish.mjs --index-only",

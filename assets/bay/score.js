@@ -3,6 +3,9 @@
    - click-to-score on event dots: the card asks who you are (linkedin url, pasted lines,
      or the demo profile when the deployment runs the wingmic mock) and answers the
      owner's three questions: is this worth my time, what will come of it, should i go.
+   - claim + sign in: a scored throwaway profile can be claimed with a wingmic key
+     (/api/link pushes it into the owner's graph), and "sign in with wingmic" trades a
+     dashboard key for the session — network overlap rides on every score after that.
    loaded after map.js on /bay. */
 (() => {
   "use strict";
@@ -15,6 +18,7 @@
 
   const EVENTS_URL = "/api/events?limit=200";
   const SCORE_URL = "/api/score";
+  const LINK_URL = "/api/link";
   const TOKEN_KEY = "bay.wingmicToken"; // this session only; a throwaway credential
 
   const el = (cls) => {
@@ -93,6 +97,7 @@
         <input class="sc-goal" placeholder="what do you want out of it? (optional)" spellcheck="false">
         <button class="sc-go">score it</button>
         <button class="sc-demo" hidden>use a demo profile instead</button>
+        <button class="sc-signin-link" hidden>have wingmic? sign in</button>
         <div class="sc-note"></div>
       </div>
 
@@ -101,6 +106,14 @@
       </div>
 
       <div class="sc-pane sc-result" hidden></div>
+
+      <div class="sc-pane sc-signin" hidden>
+        <p>paste a wingmic key and this map scores events against your real network.</p>
+        <input class="sc-signin-key" type="password" placeholder="wk_live_…" spellcheck="false" autocomplete="off">
+        <button class="sc-signin-go">link my network</button>
+        <button class="sc-signin-back">back</button>
+        <div class="sc-note"></div>
+      </div>
 
       <div class="sc-pane sc-error" hidden></div>`;
 
@@ -114,7 +127,8 @@
     return root;
   }
 
-  // capability probe, fetched once: drives the demo button and the honest "demo network" label
+  // capability probe, fetched once: drives the demo button, the sign-in entry and the
+  // honest "demo network" label
   let wingmicLabel = null;
   const capsPromise = fetch(SCORE_URL)
     .then((r) => (r.ok ? r.json() : null))
@@ -123,24 +137,29 @@
       return caps;
     })
     .catch(() => null);
+
   function wireAsk(root, f) {
     const input = root.querySelector(".sc-input");
     const goal = root.querySelector(".sc-goal");
     const go = root.querySelector(".sc-go");
     const demo = root.querySelector(".sc-demo");
+    const signin = root.querySelector(".sc-signin-link");
     const note = root.querySelector(".sc-note");
 
-    // capability probe: show the demo path only when the deployment runs the wingmic mock
+    // capability probe: the demo path only on mock deployments; sign-in wherever a
+    // wingmic client serves the deployment (mock included — its link flow works)
     capsPromise.then((caps) => {
-      if (caps && caps.wingmic === "mock") {
+      if (!caps) return;
+      if (caps.wingmic === "mock") {
         demo.hidden = false;
         note.textContent = "this deployment runs a demo network, real wingmic wiring lands soon.";
       }
+      if (caps.wingmic) signin.hidden = false;
     });
 
     const saved = sessionStorage.getItem(TOKEN_KEY);
     if (saved) {
-      score(root, f, { wingmicToken: saved }, goal.value.trim());
+      score(root, f, { wingmicToken: saved }, goal.value.trim(), "");
       return;
     }
 
@@ -150,18 +169,113 @@
         note.textContent = "paste a linkedin url or a few lines about yourself first.";
         return;
       }
+      // the server reads the shape (linkedin url vs pasted lines); the client sends it raw
       const isUrl = /^https:\/\/(www\.)?linkedin\.com\/(in|pub|company)\//i.test(text);
-      const payload = isUrl ? { source: { kind: "linkedin_url", value: text } } : { profile: { headline: text, raw: text } };
-      score(root, f, payload, goal.value.trim());
+      const source = isUrl ? { kind: "linkedin_url", value: text } : { kind: "text", value: text };
+      score(root, f, { source }, goal.value.trim(), text);
     });
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") go.click();
     });
-    demo.addEventListener("click", () => score(root, f, { wingmicToken: "mock-demo-1" }, goal.value.trim()));
+    demo.addEventListener("click", () => score(root, f, { wingmicToken: "mock-demo-1" }, goal.value.trim(), ""));
+    signin.addEventListener("click", () => {
+      root.querySelector(".sc-signin-key").value = "";
+      root.querySelector(".sc-signin .sc-note").textContent = "";
+      show(root, ".sc-signin");
+      root.querySelector(".sc-signin-key").focus();
+    });
     show(root, ".sc-ask");
   }
 
-  async function score(root, f, base, goal) {
+  function wireSignin(root, f) {
+    const keyInput = root.querySelector(".sc-signin-key");
+    const go = root.querySelector(".sc-signin-go");
+    const back = root.querySelector(".sc-signin-back");
+    const note = root.querySelector(".sc-signin .sc-note");
+
+    back.addEventListener("click", () => show(root, ".sc-ask"));
+    const submit = async () => {
+      const key = keyInput.value.trim();
+      const profile = root.querySelector(".sc-input").value.trim();
+      if (!key) {
+        note.textContent = "paste your wingmic key first.";
+        return;
+      }
+      go.disabled = true;
+      note.textContent = "linking…";
+      try {
+        const r = await fetch(LINK_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ key, profile: profile || undefined }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          note.textContent = j.message || "that key did not work.";
+          return;
+        }
+        sessionStorage.setItem(TOKEN_KEY, key);
+        note.textContent = j.note || "linked — scoring with your network now.";
+        score(root, f, { wingmicToken: key }, root.querySelector(".sc-goal").value.trim(), profile);
+      } catch (e) {
+        note.textContent = e instanceof TypeError ? "could not reach the scorer. check your connection." : "that did not work. try again.";
+      } finally {
+        go.disabled = false;
+      }
+    };
+    go.addEventListener("click", submit);
+    keyInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submit();
+    });
+  }
+
+  // the claim surface, shown on a scored throwaway/pasted profile in the result pane
+  function wireClaim(root, f, raw) {
+    const box = root.querySelector(".sc-claim");
+    if (!box) return;
+    const keyInput = box.querySelector(".sc-claim-key");
+    const go = box.querySelector(".sc-claim-go");
+    const note = box.querySelector(".sc-claim-note");
+
+    const submit = async () => {
+      const key = keyInput.value.trim();
+      if (!key) {
+        note.textContent = "paste your wingmic key first — make one in the wingmic dashboard.";
+        return;
+      }
+      go.disabled = true;
+      note.textContent = "claiming…";
+      try {
+        const r = await fetch(LINK_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ key, profile: raw || undefined }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          note.textContent = j.message || "that key did not work.";
+          return;
+        }
+        sessionStorage.setItem(TOKEN_KEY, key);
+        box.querySelector(".sc-claim-row").hidden = true;
+        go.hidden = true;
+        note.classList.add("sc-ok");
+        note.textContent = j.captured
+          ? "claimed — this profile now lives in your wingmic graph, and the rest of this map scores against your network."
+          : j.note || "linked — the rest of this map scores against your network.";
+      } catch (e) {
+        note.textContent = e instanceof TypeError ? "could not reach the scorer. check your connection." : "that did not work. try again.";
+      } finally {
+        go.disabled = false;
+      }
+    };
+    go.addEventListener("click", submit);
+    keyInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submit();
+    });
+  }
+
+  async function score(root, f, base, goal, raw) {
     show(root, ".sc-loading");
     let body;
     try {
@@ -195,7 +309,7 @@
       }
       return;
     }
-    renderResult(root, body);
+    renderResult(root, body, raw);
   }
 
   const VERDICT = {
@@ -204,16 +318,16 @@
     skip: { word: "skip it", cls: "sc-bad" },
   };
 
-  function renderResult(root, body) {
+  function renderResult(root, body, raw) {
     const pane = root.querySelector(".sc-result");
     const s = body.score;
     const v = VERDICT[s.verdict] || VERDICT.maybe;
     const pct = Math.round((s.go || 0) * 100);
+    const kind = body.profile && body.profile.kind;
+    const claimable = (kind === "throwaway" || kind === "pasted") && !sessionStorage.getItem(TOKEN_KEY);
 
     const meetHtml = (s.meet || [])
-      .map(
-        (m) => `<div class="sc-meetrow"><b></b> <span></span>${m.starter ? `<i class="sc-starter"></i>` : ""}</div>`,
-      )
+      .map((m) => `<div class="sc-meetrow"><b></b> <span></span>${m.starter ? `<i class="sc-starter"></i>` : ""}</div>`)
       .join("");
 
     pane.innerHTML = `
@@ -223,6 +337,20 @@
       <ul class="sc-reasons">${(s.reasons || []).map(() => "<li></li>").join("")}</ul>
       <div class="sc-meet"><b>who to meet</b>${meetHtml || '<div class="sc-meetrow"><span>no read on the room yet.</span></div>'}</div>
       ${body.event && body.event.url ? `<a class="sc-link" target="_blank" rel="noopener">event page →</a>` : ""}
+      ${
+        claimable
+          ? `<div class="sc-claim">
+               <b>keep this profile</b>
+               <p>claim it as your wingmic account — this profile moves into your graph and the map starts scoring against your network.</p>
+               <div class="sc-claim-row">
+                 <input class="sc-claim-key" type="password" placeholder="paste a wingmic key (wk_live_…)" spellcheck="false" autocomplete="off">
+                 <button class="sc-claim-go">claim & sign in</button>
+               </div>
+               <div class="sc-claim-note"></div>
+               <a class="sc-claim-link" href="https://wingmic.xyz" target="_blank" rel="noopener">no key yet? make an account →</a>
+             </div>`
+          : ""
+      }
       <div class="sc-meta"></div>`;
 
     // textContent for everything user-shaped; never interpolate server strings into html
@@ -243,14 +371,26 @@
     });
     const link = pane.querySelector(".sc-link");
     if (link && body.event.url) link.href = body.event.url;
+    if (claimable) wireClaim(root, null, raw);
+
     const meta = pane.querySelector(".sc-meta");
     const bits = [];
-    if (body.profile && body.profile.kind === "wingmic") bits.push("wingmic profile");
-    if (body.profile && body.profile.kind === "throwaway") bits.push("throwaway profile, paste again any time");
-    if (body.profile && body.profile.kind === "pasted") bits.push("from your paste");
+    if (kind === "wingmic") bits.push("wingmic profile");
+    if (kind === "throwaway") bits.push("throwaway profile, paste again any time");
+    if (kind === "pasted") bits.push("from your paste");
     if (body.fit && body.fit.rank) bits.push(`#${body.fit.rank} of ${body.fit.of} live events for you`);
     if (wingmicLabel === "mock") bits.push("demo network (mock)"); // labeled only on mock deployments; real wiring drops it
     meta.textContent = bits.join(" · ");
+
+    if (kind === "wingmic") {
+      const out = el("sc-signout");
+      out.textContent = "sign out";
+      out.addEventListener("click", () => {
+        sessionStorage.removeItem(TOKEN_KEY);
+        show(root, ".sc-ask");
+      });
+      meta.appendChild(out);
+    }
 
     show(root, ".sc-result");
   }
@@ -266,6 +406,7 @@
   /* ---------- the hook the map calls ---------- */
 
   bay.onEventClick = (f) => {
-    buildCard(f); // wireAsk shows the ask, or scores at once when a throwaway session is remembered
+    buildCard(f);
+    wireSignin(document.body.querySelector(".sc-card"), f); // the sign-in pane lives in every card
   };
 })();

@@ -6,7 +6,7 @@ to the boundary in `api/_wingmic.js`, which has two implementations:
 | impl | status | selected by |
 |---|---|---|
 | `MockWingmicClient` | live | `WINGMIC_MOCK=on` (tests, local demos) |
-| `RealWingmicClient` | not built, lands with wingmic PR #180 (public REST v1) | `makeWingmicClient` wiring below |
+| `RealWingmicClient` | live (wingmic PR #180 merged) | `WINGMIC_BASE_URL=https://app.wingmic.xyz` |
 
 ## the interface
 
@@ -38,36 +38,47 @@ its own owner's profile. Consequences, baked into the boundary:
   the flow stays testable. When wingmic ships a self-profile endpoint, only the real adapter
   changes; nothing else in the pipeline notices.
 
-## the adapter to write when PR #180 merges
+## the real client, as built
+
+The interface grew two methods when the real client landed: `verify(token)` (one scoped
+probe that sorts a dead key from a scoped-out one from infra trouble, used by `/api/link`)
+and `capture(token, { text, id })` (best-effort claim capture, scope `capture:write`), plus
+a `selfProfile` flag (mock true, real false) so `api/score.js` never mistakes a valid real
+key for a failed lookup.
 
 ```js
 class RealWingmicClient {
-  constructor({ baseUrl }) {}                       // e.g. https://wingmic.xyz
+  constructor({ baseUrl }) {}                       // e.g. https://app.wingmic.xyz
   async getProfile(token) {
     return null;                                    // v1 has no self-profile read
   }
   async networkOverlap(token, { event, k = 3 }) {
-    const q = [event.title, event.category, event.venue].filter(Boolean).join(" ");
+    const q = [event.title, event.category, event.venue, event.note].filter(Boolean).join(" ");
     const r = await fetch(`${this.baseUrl}/api/v1/recall?q=${encodeURIComponent(q)}&limit=${k}`,
       { headers: { authorization: `Bearer ${token}` } });
-    if (r.status === 401 || r.status === 403 || r.status === 429 || r.status >= 500) return [];
+    if (r.status === 401) throw new WingmicAuthError();   // dead key — the handler answers 401
+    if (r.status === 403 || r.status === 429 || r.status >= 500) return []; // degrade
     if (!r.ok) throw new Error("wingmic recall: " + r.status);
     const j = await r.json();
-    return (j.results || []).slice(0, k).map((x) => ({
-      who: x.name || x.title,
-      why: x.summary || (x.kind ? `in your network (${x.kind})` : "in your network"),
-      starter: null,                                // the explain stage writes starters
+    return (j.entities || []).slice(0, k).map((e) => ({
+      who: e.name,
+      why: contextWords(e).length                    // company + topic names
+        ? `moves in the ${contextWords(e).join(", ")} circle`
+        : "in your network",
+      starter: null,                                 // the explain stage writes starters
     }));
   }
 }
 ```
 
-Notes: 401/403/429/5xx degrade to `[]` (expired or unscored key, rate limit, outage:
-scoring must not break because wingmic did); other non-ok statuses throw so bugs surface.
-`api/score.js` already wraps every client call in `overlapSafely`, so the adapter only
-needs to be honest about what it throws.
+Notes: v1 recall returns **entities** (name, companies, topics), not the `results` sketch
+this doc once assumed — the adapter maps those. 403/429/5xx degrade to `[]` (missing
+scope, rate limit, outage: scoring must not break because wingmic did); a **401 throws**
+`WingmicAuthError` so a dead key surfaces as 401 instead of scoring a silently empty
+network; fetch failures degrade too. `api/score.js` wraps every client call in
+`overlapSafely`, so the adapter only needs to be honest about what it throws.
 
-Wiring: in `api/_wingmic.js`, extend `makeWingmicClient(ENV)`:
+Wiring, in place since the real client landed:
 
 ```js
 if (ENV.wingmicBaseUrl) return new RealWingmicClient({ baseUrl: ENV.wingmicBaseUrl });
@@ -75,11 +86,15 @@ if (ENV.wingmicMock === "on") return new MockWingmicClient();
 return null;
 ```
 
-plus `wingmicBaseUrl: str("WINGMIC_BASE_URL", "")` in `api/_env.js`. No handler change.
+plus `wingmicBaseUrl: str("WINGMIC_BASE_URL", "")` in `api/_env.js`.
 
 ## token flow on the map
 
-"Sign in with wingmic" (deferred until the real adapter lands) will trade the magic-link
-session for a scoped token and hand it to `/api/score` as `wingmicToken`. Until then:
-anonymous visitors paste a profile or linkedin url (throwaway path), and `WINGMIC_MOCK=on`
-deployments expose the demo path, clearly labeled in the UI.
+Wingmic v1 has no third-party token-issuance endpoint — a visitor's magic-link session
+lives in wingmic's own app and the dashboard issues the scoped keys. So "sign in with
+wingmic" on the map is honest about its shape: the visitor pastes a `wk_live_…` key, the
+map probes it once against the real api (`POST /api/link`, which also pushes the throwaway
+profile text into their graph via capture when they claimed one), then keeps the key in
+`sessionStorage` for the session and rides network overlap on every score. The key never
+touches the map server's storage or logs. Anonymous visitors keep the paste path, and
+`WINGMIC_MOCK=on` deployments expose the demo path, clearly labeled in the UI.
