@@ -42,8 +42,9 @@ the publish workflow needs, in repo → settings → secrets and variables → a
 | `GITHUB_TOKEN` | full-year contribution calendar in `/activity` and the map. any classic token with no scopes. |
 | `CHAT_PROVIDER=anthropic` + `ANTHROPIC_API_KEY` | better prose from the persona at a cost per message |
 | `CHAT_MODEL`, `BUILD_MODEL` | swap puter models. free list is in `.env.example` |
-| `CHAT_PER_HOUR`, `BUILD_PER_HOUR`, `BUILD_DAILY_CAP`, `TTS_PER_HOUR`, `SCORE_PER_HOUR` | tighten if someone is hammering it |
-| `WINGMIC_MOCK=on` | serve a fixture wingmic profile and network overlap on `/api/score` (demo data, clearly labeled). off in production until wingmic's public api wiring lands |
+| `CHAT_PER_HOUR`, `BUILD_PER_HOUR`, `BUILD_DAILY_CAP`, `TTS_PER_HOUR`, `SCORE_PER_HOUR`, `WINGMIC_LINK_PER_HOUR` | tighten if someone is hammering it |
+| `WINGMIC_MOCK=on` | serve a fixture wingmic profile and network overlap on `/api/score` (demo data, clearly labeled). dev and tests only; the real client below wins when both are set |
+| `WINGMIC_BASE_URL` | wingmic public REST v1 base (e.g. `https://app.wingmic.xyz`). when set, "sign in with wingmic" goes live: the visitor's scoped `wk_live_` key resolves network overlap through `GET /api/v1/recall` and the claim capture through `POST /api/v1/capture`. the key itself never touches this server's storage — the browser holds it for the session |
 | `BUILD_KILL=1` | stop `/build` right now, no deploy needed (railway restarts the service on variable change) |
 | `LOG_LEVEL=debug` | log every request with timing |
 

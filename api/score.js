@@ -6,8 +6,9 @@
 // (deterministic weights, always the anchor) → explanations. the explain stage is one
 // structured-output llm call when the ai provider is on, deterministic templates otherwise;
 // either way the typed pass anchors the number. the wingmic side rides the client boundary
-// in api/_wingmic.js: the real adapter lands with wingmic PR #180, the mock only when
-// WINGMIC_MOCK=on, and production without wiring keeps the anonymous ask path working.
+// in api/_wingmic.js: the real client talks to public REST v1 when WINGMIC_BASE_URL is set,
+// the mock only when WINGMIC_MOCK=on, and production without wiring keeps the anonymous ask
+// path working.
 
 const { ENV } = require("./_env.js");
 const log = require("./_log.js");
@@ -15,7 +16,7 @@ const { clientIp, limiter } = require("./_ratelimit.js");
 const P = require("./_puter.js");
 const bay = require("./_baydata.js");
 const scoring = require("./_scoring.js");
-const { makeWingmicClient, overlapSafely } = require("./_wingmic.js");
+const { makeWingmicClient, overlapSafely, WingmicAuthError } = require("./_wingmic.js");
 
 const rate = limiter({ perHour: ENV.scorePerHour });
 const wingmic = makeWingmicClient(ENV);
@@ -102,7 +103,11 @@ module.exports = async function handler(req, res) {
       });
     }
     const wp = await wingmic.getProfile(wingmicToken);
-    if (!wp) return json(res, 401, { error: "wingmic_auth", message: "that wingmic key did not resolve; sign in again" });
+    if (!wp && wingmic.selfProfile !== false) {
+      return json(res, 401, { error: "wingmic_auth", message: "that wingmic key did not resolve; sign in again" });
+    }
+    // a real v1 key has no self-profile read (docs/wingmic-client.md): the profile stays
+    // null and the score leans on the network read plus the goal.
     profile = wp;
     kind = "wingmic";
   } else {
@@ -126,8 +131,17 @@ module.exports = async function handler(req, res) {
   const rank = ranked.findIndex((r) => r.record.id === eventId) + 1;
   const fit = scoring.tokenize(pText).length ? { rank, of: live.length, fit: ranked[Math.max(0, rank - 1)].fit } : null;
 
-  // network overlap, signed-in only. wingmic trouble degrades to no overlap, never an error.
-  const meets = wingmicToken ? await overlapSafely(wingmic, wingmicToken, { event, k: 3 }) : [];
+  // network overlap, signed-in only. wingmic trouble degrades to no overlap, never an
+  // error — but a dead key surfaces as 401 so the ui can ask for a fresh sign-in.
+  let meets = [];
+  if (wingmicToken) {
+    try {
+      meets = await overlapSafely(wingmic, wingmicToken, { event, k: 3 });
+    } catch (e) {
+      if (!(e instanceof WingmicAuthError)) throw e;
+      return json(res, 401, { error: "wingmic_auth", message: "that wingmic key did not resolve; sign in again" });
+    }
+  }
 
   // stage 2: the typed anchor. stage 3: the words.
   const heuristic = scoring.heuristicScore({ profile, event, goal, meets, fit: fit ? fit.fit : undefined });

@@ -163,7 +163,46 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .sc-card .sc-go:hover { background: var(--sel); }
 .sc-card .sc-demo { margin-left: 8px; color: var(--fg-dim); }
 .sc-card .sc-demo:hover { color: var(--fg); }
+.sc-card .sc-signin-link {
+  display: block; margin-top: 8px; background: none; border: none; padding: 0;
+  color: var(--fg-dim); cursor: pointer; font: inherit; font-size: .85em; text-decoration: underline;
+}
+.sc-card .sc-signin-link:hover { color: var(--fg); }
 .sc-card .sc-note { color: var(--fg-mute); font-size: .82em; margin-top: 8px; min-height: 1em; }
+/* claim + sign in (the wingmic key exchange) */
+.sc-card .sc-signin { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+.sc-card .sc-signin p { color: var(--fg-dim); margin: 0 0 10px; }
+.sc-card .sc-signin input {
+  width: 100%; margin-bottom: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg-2); color: var(--fg); font: inherit;
+}
+.sc-card .sc-signin input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--sel); }
+.sc-card .sc-signin-go, .sc-card .sc-claim-go {
+  border: 1px solid var(--accent); border-radius: 8px; background: var(--bg-2); color: var(--accent);
+  font: inherit; padding: 7px 14px; cursor: pointer;
+}
+.sc-card .sc-signin-go:hover, .sc-card .sc-claim-go:hover { background: var(--sel); }
+.sc-card .sc-signin-go[disabled], .sc-card .sc-claim-go[disabled] { opacity: .5; cursor: default; }
+.sc-card .sc-signin-back, .sc-card .sc-claim-link, .sc-card .sc-signout {
+  background: none; border: none; padding: 0; color: var(--fg-dim); cursor: pointer; font: inherit; font-size: .85em; text-decoration: underline;
+}
+.sc-card .sc-signin-back:hover, .sc-card .sc-claim-link:hover, .sc-card .sc-signout:hover { color: var(--fg); }
+.sc-card .sc-signin-back { display: block; margin-top: 8px; }
+.sc-card .sc-signin .sc-note { min-height: 0; }
+.sc-card .sc-claim { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+.sc-card .sc-claim b { font-size: .95em; }
+.sc-card .sc-claim p { color: var(--fg-dim); font-size: .88em; margin: 6px 0 10px; }
+.sc-card .sc-claim-row { display: flex; gap: 8px; }
+.sc-card .sc-claim-row[hidden], .sc-card .sc-claim a[hidden] { display: none; } /* display:flex/inline-block beats the ua [hidden] rule, same trap as .sc-pane[hidden] */
+.sc-card .sc-claim-row input {
+  flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg-2); color: var(--fg); font: inherit;
+}
+.sc-card .sc-claim-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--sel); }
+.sc-card .sc-claim-go { white-space: nowrap; }
+.sc-card .sc-claim-note { color: var(--fg-mute); font-size: .82em; margin-top: 8px; min-height: 1em; }
+.sc-card .sc-claim-note.sc-ok { color: var(--fg); }
+.sc-card .sc-claim-link { display: inline-block; margin-top: 6px; }
 .sc-card .sc-loading { color: var(--fg-dim); font-family: var(--mono); font-size: .9em; padding: 10px 0 2px; }
 .sc-card .sc-spin {
   display: inline-block; width: 10px; height: 10px; margin-right: 8px; border: 2px solid var(--line);
