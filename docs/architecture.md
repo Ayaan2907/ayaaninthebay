@@ -26,13 +26,17 @@ routing inside `ask`: an active call sends the text to `CALL.say`; a message tha
 
 `buildSystemPrompt(KNOWLEDGE)` turns `content/knowledge.js` and `content/voice.md` into one system prompt with the hard rules: first person, facts only from the file, off-limits topics declined, muvik as an apprenticeship, advanceiq as analytics not lending. provider is chosen in `_env.js`: puter (my token, `CHAT_MODEL`) when the token is set, anthropic when only that key is set, otherwise `none` and the handler answers 503. responses stream as plain text so the client needs no parser.
 
-## the bay surface (bay.html, assets/bay/city.js, content/city.json, api/github.js, api/weather.js)
+## the bay surface (bay.html, assets/bay/map.js, assets/bay/places.json)
 
-its own entry point at `/bay`, its own css and bundle; loads nothing from the terminal. the terminal links out to it and `/map` redirects there. a building card deep-links back with `/?q=<question>`, which the terminal pre-asks.
+its own entry point at `/bay`, its own css and bundle; loads nothing from the terminal. the terminal links out to it and the old canvas-map urls `/map` and `/city` 302 there. a narrative card deep-links back with `/?q=<question>`, which the terminal pre-asks.
 
-data: `city.json` places districts (chapters of my life), landmarks, billboards and `match`/`overrides` rules that assign repos to districts. `/api/github` returns non-fork repos with size, stars and last push; each becomes a building, height from size and stars, lit windows if pushed in the last month. the last events become vans driving from their repo to the shipping dock. `/api/weather` (open-meteo, cached 30 min) drives fog and rain; the clock drives day and night.
+map: maplibre gl from a cdn, free raster tiles with no key and no build step — openstreetmap standard for day, esri world dark gray canvas for night (carto's legacy raster urls answer with an "api key required" watermark, so they are out). five toggleable category layers with per-layer counts; clicking a dot opens the narrative card and eases the view in (skipped under reduced motion); clicks get 12px of hit slop with nearest-dot wins, because small dots and fingers miss.
 
-renderer: perspective projection of axis-aligned boxes, painter's sort, flat shading, distance fog, all on a 2d canvas. no library. the scene is data in, boxes out, so swapping in three.js means replacing `drawBox` and the loop.
+data: `assets/bay/places.json` is a geojson feature array — bay area places with real coordinates, a category (startup, office, housing, sports, tour) and a first-person note (what it is, why it matters, what happened there). no bare pins: a place without a note fails `scripts/check.mjs`. `content/city.json` stays as the seed material `places.json` was curated from; the old canvas city (repos as buildings, github vans, weather) is retired, and `/api/github` + `/api/weather` still serve the terminal.
+
+## /graph (assets/map.js)
+
+the older orbit + timeline view of the repos, still linked from the terminal.
 
 ## /build (api/build.js, assets/build.js, content/playbook.json)
 

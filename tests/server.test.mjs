@@ -49,12 +49,21 @@ test("security headers are on every response", async () => {
 test("the bay map is its own surface, no shared runtime bundle", async () => {
   const bay = await (await fetch(base + "/bay")).text();
   const term = await (await fetch(base + "/")).text();
-  assert.match(bay, /assets\/bay\/city\.js/, "bay loads its own bundle");
+  assert.match(bay, /assets\/bay\/map\.js/, "bay loads its own bundle");
   assert.doesNotMatch(bay, /content\/knowledge\.js|assets\/(map|app|build|call)\.js/, "bay shares no runtime js with the terminal");
   assert.match(bay, /assets\/bay\/bay\.css/, "bay styles are its own");
   assert.equal((await fetch(base + "/bay/")).status, 200, "trailing slash works");
-  assert.equal((await fetch(base + "/assets/bay/city.js")).status, 200, "bundle is served");
+  assert.equal((await fetch(base + "/assets/bay/map.js")).status, 200, "map bundle is served");
+  assert.equal((await fetch(base + "/assets/bay/places.json")).status, 200, "places data is served");
+  assert.match(bay, /maplibre/, "the map loads maplibre from a cdn");
+  assert.match(bay, /assets\/bay\/map\.js/, "bay bootstraps the real map");
+  assert.doesNotMatch(bay, /cityCanvas/, "the canvas city is gone from /bay");
   assert.match(term, /content\/knowledge\.js/, "terminal keeps knowledge");
   assert.doesNotMatch(term, /assets\/city\.js/, "terminal no longer bootstraps the city canvas");
   assert.match(term, /href="\/bay"/, "terminal links out to the map");
+  for (const old of ["/map", "/city"]) {
+    const r = await fetch(base + old, { redirect: "manual" });
+    assert.equal(r.status, 302, old + " redirects to the real map");
+    assert.equal(r.headers.get("location"), "/bay", old + " points at /bay");
+  }
 });
