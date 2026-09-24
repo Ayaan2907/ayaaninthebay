@@ -265,10 +265,6 @@ header.top nav a:hover, header.top nav button:hover { color: var(--accent); }
 .ev .verb { color: var(--accent-2); }
 .ev a { border: 0; color: var(--fg); }
 
-/* ---------- /map : city ---------- */
-.map.city .hud { position: absolute; left: 20px; top: 58px; font-size: .86em; color: var(--fg-dim); background: color-mix(in srgb, var(--bg) 70%, transparent); padding: 3px 8px; border-radius: 6px; pointer-events: none; }
-.map.city .legend { background: color-mix(in srgb, var(--bg) 70%, transparent); padding: 6px 10px; border-radius: 6px; }
-
 /* ---------- /build ---------- */
 .buildlog { max-height: 180px; overflow: hidden; font-size: .86em; color: var(--fg-mute); white-space: pre-wrap; }
 .buildframe { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 6px; background: #fff; }

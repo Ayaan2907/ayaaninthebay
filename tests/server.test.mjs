@@ -45,3 +45,16 @@ test("security headers are on every response", async () => {
   assert.equal(r.headers.get("x-content-type-options"), "nosniff");
   assert.equal(r.headers.get("x-frame-options"), "DENY");
 });
+
+test("the bay map is its own surface, no shared runtime bundle", async () => {
+  const bay = await (await fetch(base + "/bay")).text();
+  const term = await (await fetch(base + "/")).text();
+  assert.match(bay, /assets\/bay\/city\.js/, "bay loads its own bundle");
+  assert.doesNotMatch(bay, /content\/knowledge\.js|assets\/(map|app|build|call)\.js/, "bay shares no runtime js with the terminal");
+  assert.match(bay, /assets\/bay\/bay\.css/, "bay styles are its own");
+  assert.equal((await fetch(base + "/bay/")).status, 200, "trailing slash works");
+  assert.equal((await fetch(base + "/assets/bay/city.js")).status, 200, "bundle is served");
+  assert.match(term, /content\/knowledge\.js/, "terminal keeps knowledge");
+  assert.doesNotMatch(term, /assets\/city\.js/, "terminal no longer bootstraps the city canvas");
+  assert.match(term, /href="\/bay"/, "terminal links out to the map");
+});

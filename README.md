@@ -2,7 +2,7 @@
 
 my personal site, built as a coding-agent session. type a question and it answers as me. type `/` and it shows commands.
 
-`/map` is san francisco at night: districts are chapters of my life, buildings are my github repos, vans are commits driving to the dock, the weather and daylight are real. `/build <thing>` writes and ships a small web app for the visitor, live at a url, and takes follow-up edits. `/call` is a voice call with the ai version of me. `/activity` is my github feed. `/blog` is markdown in a folder that a github action publishes in my voice.
+`/bay` is its own surface now: san francisco at night, districts are chapters of my life, buildings are my github repos, vans are commits driving to the dock, the weather and daylight are real. the terminal links out to it. `/build <thing>` writes and ships a small web app for the visitor, live at a url, and takes follow-up edits. `/call` is a voice call with the ai version of me. `/activity` is my github feed. `/blog` is markdown in a folder that a github action publishes in my voice.
 
 one runtime dependency (`@heyputer/puter.js`), no build step, no framework. node 22, one process, deployed on railway.
 
@@ -29,15 +29,17 @@ npm run publish   # drafts/ → posts/, rebuild index + rss + billboards
 
 ```
 index.html               the terminal
+bay.html                 /bay: the map surface, own entry point
 assets/app.js            terminal ui, commands, routing to the ai / build / call
-assets/city.js           /map: hand-rolled canvas 3d of sf
+assets/bay/city.js       /bay: hand-rolled canvas 3d of sf, standalone bundle
+assets/bay/bay.css       /bay styles, shared nothing with the terminal
 assets/build.js          /build client: consumes the step stream, previews, follow-ups; visitor mode
 assets/call.js           /call client: speech recognition, sentence-level tts queue, interruption
 assets/map.js            /graph: the older orbit + timeline view
 assets/md.js             markdown renderer + front matter
 assets/style.css
 
-content/knowledge.js     the one file about me. terminal, ai persona, map and publisher read it
+content/knowledge.js     the one file about me. terminal, ai persona and publisher read it (the bay map carries its own links)
 content/voice.md         how i write. ai persona and blog publisher read it
 content/playbook.json    the /build pipeline: my agentos skills, house style, commit + pr shape
 content/city.json        districts, landmarks, which repo goes where

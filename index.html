@@ -23,7 +23,7 @@
     <a class="brand" href="/">ayaan<b>.</b></a>
     <nav>
       <a href="/blog/">blog</a>
-      <button id="mapBtn" title="/map">sf</button>
+      <a href="/bay" title="/bay">bay</a>
       <button id="themeBtn" title="/theme">theme</button>
     </nav>
   </header>
@@ -70,28 +70,11 @@
   <div class="card" id="mapCard" hidden></div>
 </section>
 
-<!-- /map : sf at night -->
-<section class="map city" id="city" hidden>
-  <div class="bar">
-    <div class="t">✻ <b>sf</b> <span class="hint">drag · scroll · click a building · <kbd>n</kbd> night · <kbd>/</kbd> find</span></div>
-    <div class="q"><span>❯</span><input id="cityQuery" placeholder="find a repo, a district, a language…" spellcheck="false" autocomplete="off"></div>
-    <div class="r"><button id="cityNight">n · night</button><button id="cityClose">esc</button></div>
-  </div>
-  <canvas id="cityCanvas"></canvas>
-  <div class="hud" id="cityHud">building the city…</div>
-  <div class="legend">
-    <div><i style="border-color:var(--accent);background:var(--accent)"></i>landmark</div>
-    <div><i style="border-color:var(--fg-mute)"></i>repo · height = size + stars</div>
-    <div><i style="border-color:var(--accent-2);background:var(--accent-2)"></i>van = a github event</div>
-    <div><i style="border-color:#e7a55b;background:#e7a55b"></i>lit window = pushed this month</div>
-  </div>
-  <div class="card" id="cityCard" hidden></div>
-</section>
+<!-- the sf map moved to its own surface: <a href="/bay">/bay</a> -->
 
 <script src="/content/knowledge.js"></script>
 <script src="/assets/md.js"></script>
 <script src="/assets/map.js"></script>
-<script src="/assets/city.js"></script>
 <script src="/assets/build.js"></script>
 <script src="/assets/call.js"></script>
 <script src="/assets/app.js"></script>

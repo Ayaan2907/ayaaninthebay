@@ -20,7 +20,7 @@ const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; cha
 const MAX_BODY = 512 * 1024;
 
 // folders a request may touch. anything else on disk is invisible.
-const PUBLIC = ["assets", "blog", "content", "posts", "index.html", "feed.xml", "robots.txt", "sitemap.xml"];
+const PUBLIC = ["assets", "blog", "content", "posts", "bay.html", "index.html", "feed.xml", "robots.txt", "sitemap.xml"];
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -52,6 +52,7 @@ async function api(req, res, name) {
 
 function serveStatic(req, res, p) {
   if (/^\/blog\/[^/.]+\/?$/.test(p)) p = "/blog/post.html";
+  if (p === "/bay" || p === "/bay/") p = "/bay.html";
   if (p === "/") p = "/index.html";
   if (p.endsWith("/")) p += "index.html";
   if (!PUBLIC.some((x) => p === "/" + x || p.startsWith("/" + x + "/"))) { res.statusCode = 404; return res.end("404"); }

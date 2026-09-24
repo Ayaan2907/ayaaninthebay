@@ -1,13 +1,14 @@
 # architecture
 
-one node process, plain files, five features that share a knowledge file. this doc is the map; the code comments carry the detail.
+one node process, plain files. the terminal, the ai persona, /build and /call share a knowledge file; the bay map stands alone. this doc is the map; the code comments carry the detail.
 
 ## request flow
 
 ```
                        ┌──────────────────────── scripts/server.mjs ─────────────────────────┐
-browser ── GET /  ────▶│ static allow-list: index.html, assets/, blog/, content/, posts/,     │
-                       │ feed.xml, robots.txt. clean urls, /blog/:slug → blog/post.html      │
+browser ── GET /  ────▶│ static allow-list: index.html, bay.html, assets/, blog/, content/,  │
+                       │ posts/, feed.xml, robots.txt. clean urls, /bay → bay.html,          │
+                       │ /blog/:slug → blog/post.html                                        │
         ── /api/x ────▶│ body cap 512 kb → json parse → require("api/x.js")(req, res)       │
                        │ security headers on everything. json-lines logs to stdout.          │
                        └──────────────────────────────────────────────────────────────────────┘
@@ -25,7 +26,9 @@ routing inside `ask`: an active call sends the text to `CALL.say`; a message tha
 
 `buildSystemPrompt(KNOWLEDGE)` turns `content/knowledge.js` and `content/voice.md` into one system prompt with the hard rules: first person, facts only from the file, off-limits topics declined, muvik as an apprenticeship, advanceiq as analytics not lending. provider is chosen in `_env.js`: puter (my token, `CHAT_MODEL`) when the token is set, anthropic when only that key is set, otherwise `none` and the handler answers 503. responses stream as plain text so the client needs no parser.
 
-## the city (assets/city.js, content/city.json, api/github.js, api/weather.js)
+## the bay surface (bay.html, assets/bay/city.js, content/city.json, api/github.js, api/weather.js)
+
+its own entry point at `/bay`, its own css and bundle; loads nothing from the terminal. the terminal links out to it and `/map` redirects there. a building card deep-links back with `/?q=<question>`, which the terminal pre-asks.
 
 data: `city.json` places districts (chapters of my life), landmarks, billboards and `match`/`overrides` rules that assign repos to districts. `/api/github` returns non-fork repos with size, stars and last push; each becomes a building, height from size and stars, lit windows if pushed in the last month. the last events become vans driving from their repo to the shipping dock. `/api/weather` (open-meteo, cached 30 min) drives fog and rain; the clock drives day and night.
 
