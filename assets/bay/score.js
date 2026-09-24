@@ -122,6 +122,7 @@
     root.querySelector(".sc-when").textContent = when;
     root.querySelector(".sc-x").addEventListener("click", close);
     document.body.appendChild(root);
+    card = root; // close() removes exactly this element — without the assignment, x and escape stack cards instead
 
     wireAsk(root, f);
     return root;
