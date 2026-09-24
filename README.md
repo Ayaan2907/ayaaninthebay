@@ -31,7 +31,8 @@ npm run publish   # drafts/ → posts/, rebuild index + rss + billboards
 index.html               the terminal
 bay.html                 /bay: the map surface, own entry point
 assets/app.js            terminal ui, commands, routing to the ai / build / call
-assets/bay/city.js       /bay: hand-rolled canvas 3d of sf, standalone bundle
+assets/bay/map.js        /bay: maplibre map of the bay with first-person notes, standalone bundle
+assets/bay/places.json   /bay data: bay area places with real coordinates, category, note
 assets/bay/bay.css       /bay styles, shared nothing with the terminal
 assets/build.js          /build client: consumes the step stream, previews, follow-ups; visitor mode
 assets/call.js           /call client: speech recognition, sentence-level tts queue, interruption
