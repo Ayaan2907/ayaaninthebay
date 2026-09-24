@@ -127,6 +127,50 @@ function parseSourceInput(v) {
   return null;
 }
 
+// the paste parser: deterministic field-lifting from a pasted profile. this is the
+// other half of the anonymous-linkedin path (the raw text rides into retrieval as-is):
+// the lifted fields give the scorer and the ui something structured to read. no llm, no
+// web lookups — only what the paste itself says, so nothing here can invent a fact.
+const GOAL_RE = /^\s*(?:i\s+am\s+|im\s+)?(?:looking|looking for|seeking|hoping|open|want)\b(.*)$/i;
+const TOPIC_RE = /^\s*(?:topics|interests|focus|stack)\s*[:\-]\s*(.+)$/i;
+const AT_RE = /\s+at\s+/i;
+
+function parsePaste(text) {
+  const lines = String(text || "")
+    .split(/\n+/)
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  if (!lines.length) return null;
+  const headline = oneLine(lines[0], 200);
+  const roles = [];
+  const goals = [];
+  const topics = [];
+  // the headline usually names the role too ("ml engineer at acme")
+  if (AT_RE.test(lines[0])) {
+    const role = oneLine(lines[0].split(AT_RE)[0], 80);
+    if (role) roles.push(role);
+  }
+  for (const line of lines.slice(1)) {
+    if (TOPIC_RE.test(line)) {
+      const m = TOPIC_RE.exec(line);
+      for (const t of cleanList(m[1].split(/[,;/|]/), 12)) if (!topics.includes(t)) topics.push(t);
+      continue;
+    }
+    if (GOAL_RE.test(line)) {
+      const g = oneLine(line, 120);
+      if (g && !goals.includes(g)) goals.push(g);
+      continue;
+    }
+    // "ml engineer at acme" names a role; a bare line is not safely anything, so it
+    // stays raw only and retrieval still reads it.
+    if (AT_RE.test(line)) {
+      const role = oneLine(line.split(AT_RE)[0], 80);
+      if (role && !roles.includes(role)) roles.push(role);
+    }
+  }
+  return { headline, roles, topics, goals };
+}
+
 // build the viewer profile from what the request carries. wingmic tokens resolve through
 // the client in api/_wingmic.js, never here.
 function buildProfile({ profile, source } = {}) {
@@ -137,14 +181,28 @@ function buildProfile({ profile, source } = {}) {
   if (source) {
     const s = parseSourceInput(source);
     if (!s) return { profile: null, quality: "none" };
+    if (s.kind === "linkedin_url") {
+      const p = {
+        kind: "throwaway",
+        name: undefined,
+        headline: undefined,
+        roles: [],
+        topics: [],
+        goals: [],
+        links: { linkedin: s.value },
+        raw: s.value,
+      };
+      return { profile: p, quality: qualityOf(p) };
+    }
+    const parsed = parsePaste(s.value) || {};
     const p = {
       kind: "throwaway",
       name: undefined,
-      headline: undefined,
-      roles: [],
-      topics: [],
-      goals: [],
-      links: s.kind === "linkedin_url" ? { linkedin: s.value } : {},
+      headline: parsed.headline,
+      roles: parsed.roles || [],
+      topics: parsed.topics || [],
+      goals: parsed.goals || [],
+      links: {},
       raw: s.value,
     };
     return { profile: p, quality: qualityOf(p) };
@@ -153,13 +211,15 @@ function buildProfile({ profile, source } = {}) {
 }
 
 // thin = not enough on the profile to read the room sharply. the ui nudges for more.
+// a null profile (a wingmic key with no self-read on v1) is as thin as it gets.
 function qualityOf(p) {
+  const q = p || {};
   const signals =
-    (p.topics || []).length +
-    (p.roles || []).length +
-    (p.goals || []).length +
-    (p.headline ? 1 : 0) +
-    (p.raw && p.raw.length > 40 ? 2 : 0);
+    (q.topics || []).length +
+    (q.roles || []).length +
+    (q.goals || []).length +
+    (q.headline ? 1 : 0) +
+    (q.raw && q.raw.length > 40 ? 2 : 0);
   return signals >= 3 ? "ok" : "thin";
 }
 
@@ -235,6 +295,7 @@ function fallbackExplain(heuristic, { profile, event, goal, meets = [] } = {}) {
   if (heuristic.facts.gFit > 0.2 && goal) reasons.push(`your goal ("${goal.trim().slice(0, 80)}") lines up with what this is`);
   if (meets.length) reasons.push(`${meets.length} of your people move in this circle`);
   if (heuristic.facts.soon) reasons.push("it starts within a couple of days, so plans stay easy");
+  if (!reasons.length && p.kind === "wingmic") reasons.push("your wingmic network has no read on this room yet");
   if (!reasons.length) {
     reasons.push(
       qualityOf(p) === "ok" ? "little overlap with your profile so far" : "not enough profile yet for a sharp read; paste a few lines or add your linkedin",
@@ -338,6 +399,7 @@ module.exports = {
   retrieve,
   parseProfileInput,
   parseSourceInput,
+  parsePaste,
   buildProfile,
   qualityOf,
   heuristicScore,

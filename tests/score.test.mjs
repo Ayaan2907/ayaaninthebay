@@ -169,6 +169,31 @@ test("scoring: buildProfile accepts a linkedin url, a paste, and rejects junk", 
   assert.equal(junk.profile, null);
 });
 
+test("scoring: parsePaste lifts fields from a paste without inventing any", () => {
+  const p = scoring.parsePaste(
+    "ml engineer at acme\nbuilt agents and infra for years\nlooking for a cofounder\ntopics: rust, edge configs, inference",
+  );
+  assert.equal(p.headline, "ml engineer at acme");
+  assert.deepEqual(p.roles, ["ml engineer"]);
+  assert.equal(p.goals[0], "looking for a cofounder");
+  assert.deepEqual(p.topics, ["rust", "edge configs", "inference"]);
+  // a bare line is claimed by nothing; it rides in raw only
+  const bare = scoring.parsePaste("ml engineer\ni build compilers");
+  assert.deepEqual(bare.roles, []);
+  assert.deepEqual(bare.goals, []);
+  assert.deepEqual(bare.topics, []);
+  assert.equal(scoring.parsePaste(""), null);
+});
+
+test("scoring: a pasted text source builds a throwaway with parsed fields and the raw text", () => {
+  const b = scoring.buildProfile({ source: { kind: "text", value: "ml engineer at acme\nlooking for a cofounder" } });
+  assert.equal(b.profile.kind, "throwaway");
+  assert.equal(b.profile.headline, "ml engineer at acme");
+  assert.deepEqual(b.profile.roles, ["ml engineer"]);
+  assert.ok(b.profile.raw.includes("looking for a cofounder"), "the raw text rides along for retrieval");
+  assert.equal(b.quality, "ok");
+});
+
 /* ---------- integration: the real server ---------- */
 
 let main, base, rateProc, rateBase;
