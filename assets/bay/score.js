@@ -152,7 +152,7 @@
       if (!caps) return;
       if (caps.wingmic === "mock") {
         demo.hidden = false;
-        note.textContent = "this deployment runs a demo network, real wingmic wiring lands soon.";
+        note.textContent = "this deployment runs a demo network — sign in with a real key to score against your own.";
       }
       if (caps.wingmic) signin.hidden = false;
     });
