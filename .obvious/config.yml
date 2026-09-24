@@ -1,0 +1,6 @@
+# repo policy for agent runs
+branches:
+  default: main
+merge:
+  method: squash
+  requireHumanMerge: true
