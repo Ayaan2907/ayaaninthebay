@@ -78,8 +78,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .layers[hidden] { display: none; }
 .layers .l-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .layers .l-title { color: var(--fg-mute); }
-.layers .l-close { color: var(--fg-mute); border-bottom: 0; }
-.layers .l-close:hover { color: var(--accent); }
 .layers .l-tip { margin: 2px 0 8px; color: var(--fg-mute); font-size: .9em; }
 .layers .l-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; cursor: pointer; user-select: none; }
 .layers .l-row input { accent-color: var(--accent); }
