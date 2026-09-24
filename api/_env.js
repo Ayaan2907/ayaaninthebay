@@ -65,6 +65,9 @@ const ENV = Object.freeze({
   // /api/score (the /bay event cards)
   scorePerHour: int("SCORE_PER_HOUR", 30, { min: 1, max: 1000 }),
   wingmicMock: oneOf("WINGMIC_MOCK", ["on", "off"], "off"),
+  // wingmic public REST v1 (e.g. https://app.wingmic.xyz). when set, the real client
+  // serves the signed-in path; WINGMIC_MOCK stays for dev and tests only.
+  wingmicBaseUrl: str("WINGMIC_BASE_URL", ""),
 
   // /call
   ttsVoice: str("TTS_VOICE", "Matthew"),
