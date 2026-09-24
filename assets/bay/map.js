@@ -62,6 +62,7 @@
     attributionControl: false, // attribution lives in the layers panel, always on screen
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+  window.__bay = { map }; // test hook: lets tooling project coordinates and drive the map
 
   /* ---------- places: dots, labels, toggles ---------- */
   const visible = Object.fromEntries(CATS.map((c) => [c.id, true]));
