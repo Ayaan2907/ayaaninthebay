@@ -93,6 +93,10 @@ write anything into `drafts/some-note.md` (bullets, a transcript, a paragraph) a
 
 to write a post by hand, create `posts/<slug>.md` with front matter and run `npm run index`. `draft: true` hides a post.
 
+## bay data
+
+`/bay` events and places come from `scripts/ingest.mjs`: a committed seed (`data/seed/`), luma's public calendar, and an eventbrite stub. `npm run ingest:dry` previews a run; in production the server refreshes the store itself every `INGEST_INTERVAL_HOURS`, and stale events drop out of the api after a 24h grace. storage is flat json with a libsql path open — `docs/deploy.md` has the ops and cron notes.
+
 ## commands
 
 `/help /about /now /work /projects /stack /blog /read <slug> /activity /sf /links /contact /map /graph /build <thing> /call /hangup /theme /clear`

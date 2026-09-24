@@ -58,9 +58,15 @@ browser `SpeechRecognition` (continuous, interim results) hears the visitor. fin
 
 posts are markdown with front matter, rendered in the browser. `scripts/publish.mjs` turns anything in `drafts/` into a finished post using `voice.md` and the knowledge file (puter first, anthropic if configured), then rebuilds `posts/index.json`, `feed.xml` and the blog entries in `content/billboards.json`. `.github/workflows/publish.yml` runs it on push and commits the result; railway redeploys from that commit.
 
+## bay data (api/_baydata.js, scripts/ingest.mjs, data/seed/)
+
+`/bay` renders events and places from two json stores (`data/events.json`, `data/places.json`), rebuilt by `scripts/ingest.mjs` from three sources: the committed seed (`data/seed/`), luma's public discovery api (no key), and an eventbrite stub (its public search api closed in 2019; a tokened path slots in behind the same source interface). every record carries `source`, `fetchedAt` and a stable id; re-runs merge in place, never duplicate, and keep the earliest `firstSeenAt`. expiry is serve-time: events leave the api at `endsAt` (or `startsAt` when no end is listed) + a 24h grace, places stay until removed — the file keeps the full history, nothing is silently deleted. the server refreshes its own store on a timer (`INGEST_ENABLED`, default on in production, every `INGEST_INTERVAL_HOURS`) because a railway cron service runs in its own container and cannot write files the web service would see; the cron-service path returns once the store moves to shared storage.
+
 ## limits and known gaps
 
 - rate limits and the daily cap are in memory: one instance only.
 - `/api/github` without `GITHUB_TOKEN` sees about 90 days of public events; with a token it gets the full contribution calendar.
 - the persona's fence is prompt-level. it is tight, but it is a prompt.
 - `/call` is browser speech, not a realtime voice model. the upgrade path (openai realtime, an anam avatar, or a livekit worker) keeps `assets/call.js`'s card and swaps the transport.
+- the bay store is two json files in one container: no cross-instance sharing and no history beyond the current merge window. the libsql/turso migration path is open but not built.
+- luma coverage is the sf public calendar paged to 75 events per run; a source that is down tonight simply contributes nothing rather than failing the run.

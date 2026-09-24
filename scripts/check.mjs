@@ -6,6 +6,8 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { createRequire } from "node:module";
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const problems = [];
 const walk = (dir, out = []) => {
@@ -34,6 +36,19 @@ try {
   const places = json("assets/bay/places.json"); if (!Array.isArray(places.features) || !places.features.length) problems.push("assets/bay/places.json: features missing");
   const posts = json("posts/index.json"); if (!Array.isArray(posts)) problems.push("posts/index.json: not an array");
 } catch (e) { problems.push("json: " + e.message); }
+
+// 2b. bay seed records validate against the store schema (api/_baydata.js is the contract)
+try {
+  const baydata = createRequire(import.meta.url)(path.join(ROOT, "api", "_baydata.js"));
+  for (const f of ["events", "places"]) {
+    const raw = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "seed", `${f}.json`), "utf8"));
+    if (!Array.isArray(raw)) throw new Error(`${f}.json is not an array`);
+    raw.forEach((r, i) => {
+      const n = baydata.normalizeRecord(r);
+      if (!n.ok) problems.push(`data/seed/${f}.json[${i}]: ${n.error}`);
+    });
+  }
+} catch (e) { problems.push("data/seed: " + e.message); }
 
 // 3. no secrets in tracked text
 const SECRET = /(sk-ant-[a-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY|eyJ[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{40,})/;
