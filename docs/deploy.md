@@ -85,8 +85,41 @@ railway domain                    # generate or list domains
 | `/call` has no voice | `/api/tts` 503 means no token; 502 means puter tts failed, logs: `tts`. the client falls back to the browser voice. |
 | map has no buildings | `/api/github` 502 (rate limited without a token). the client uses `content/repos.fallback.json`. |
 | 429s in logs | someone hit a per-ip limit. raise the cap or leave it. |
+| `/bay` has no events | logs: `ingest.run` shows per-source errors. `npm run ingest:dry` reproduces without writing. |
 
 logs are json lines; railway's log filter takes `event:chat.model` style queries.
+
+## bay data (events + places)
+
+`/bay` serves events and places from two json files (`data/events.json`, `data/places.json`), rebuilt by `scripts/ingest.mjs` from three sources:
+
+| source | what | key |
+|---|---|---|
+| `seed` | committed curated launch data in `data/seed/` | none |
+| `luma` | public discovery api, sf calendar paging (74 events at validation) | none |
+| `eventbrite` | stub — public search closed in 2019; a tokened v3 path slots in behind the same source interface | n/a |
+
+every record carries `source`, `fetchedAt` and a stable id; re-runs merge in place (never duplicates) and keep the earliest `firstSeenAt`. events expire from the read api at `endsAt` (or `startsAt` when no end is listed) + a 24h grace; places stay until removed. the store keeps full history — expiry is serve-time, nothing is deleted.
+
+### refresh
+
+the web service refreshes its own store on a timer: `INGEST_ENABLED` defaults to `on` in production and `off` in dev, every `INGEST_INTERVAL_HOURS` (default 6).
+
+why a timer instead of a cron service: a railway cron is a separate service that runs and exits, and railway volumes cannot attach to two services — a cron-run ingest would write to a container the web service never sees. once the store moves to shared storage (libsql/turso), switch to the nightly cron and drop the timer:
+
+1. railway → project → **+ new** → **cron service**
+2. start command: `npm run ingest` (append `-- --source=luma` to scope it)
+3. schedule: `0 3 * * *` (nightly, utc)
+
+### ops
+
+```
+npm run ingest                          # all sources, writes the store
+npm run ingest:dry                      # dry-run: reports what would change, writes nothing
+npm run ingest -- --source=luma         # one source only
+```
+
+a failing source logs its errors into the `ingest.run` line and the other sources still merge; the cli exits non-zero when any source errored, so a cron can alert on exit code. `data/events.json` + `data/places.json` are gitignored runtime state; `data/seed/` is tracked, so a fresh deploy serves the seed until the first ingest lands.
 
 ## local parity
 
