@@ -3,9 +3,11 @@
    - click-to-score on event dots: the card asks who you are (linkedin url, pasted lines,
      or the demo profile when the deployment runs the wingmic mock) and answers the
      owner's three questions: is this worth my time, what will come of it, should i go.
-   - claim + sign in: a scored throwaway profile can be claimed with a wingmic key
-     (/api/link pushes it into the owner's graph), and "sign in with wingmic" trades a
-     dashboard key for the session — network overlap rides on every score after that.
+   - claim + link: a scored throwaway profile can be pushed into the owner's wingmic
+     graph by linking a scoped dashboard key (/api/link does the capture), and the
+     linked key also makes every later score read network overlap. wingmic v1 has no
+     oauth to redirect through: the visitor pastes the key, this flow never pretends
+     otherwise.
    loaded after map.js on /bay. */
 (() => {
   "use strict";
@@ -43,7 +45,9 @@
       type: "Feature",
       id: e.id,
       geometry: { type: "Point", coordinates: [e.lng, e.lat] },
-      properties: { id: e.id, name: e.title, note: e.venue || "", url: e.url || "", startsAt: e.startsAt || "" },
+      // cat carries the store category: the persona weights read it (canon folds
+      // it together with the places' singular vocabulary)
+      properties: { id: e.id, name: e.title, note: e.venue || "", url: e.url || "", startsAt: e.startsAt || "", cat: e.category || "" },
     };
   }
 
@@ -57,10 +61,12 @@
       const feats = withGeo.map(eventFeature);
       bay.addEvents(feats, data.total != null ? data.total : feats.length);
       if (data.expired) console.info(`bay: ${data.expired} expired events not shown`);
+      if (!feats.length && bay.hudNote) bay.hudNote("no live events right now — the places still carry their notes");
     })
     .catch((err) => {
       // never swallow it: the map still works, the event dots just do not show
       console.error("bay: events failed to load", err);
+      if (bay.hudNote) bay.hudNote("events failed to load — the map still works");
     });
 
   /* ---------- the score card ---------- */
@@ -97,7 +103,7 @@
         <input class="sc-goal" placeholder="what do you want out of it? (optional)" spellcheck="false">
         <button class="sc-go">score it</button>
         <button class="sc-demo" hidden>use a demo profile instead</button>
-        <button class="sc-signin-link" hidden>have wingmic? sign in</button>
+        <button class="sc-signin-link" hidden>have wingmic? link your key</button>
         <div class="sc-note"></div>
       </div>
 
@@ -108,7 +114,7 @@
       <div class="sc-pane sc-result" hidden></div>
 
       <div class="sc-pane sc-signin" hidden>
-        <p>paste a wingmic key and this map scores events against your real network.</p>
+        <p>paste a wingmic key from your wingmic dashboard and this map scores events against your real network. the key stays in this tab for the session.</p>
         <input class="sc-signin-key" type="password" placeholder="wk_live_…" spellcheck="false" autocomplete="off">
         <button class="sc-signin-go">link my network</button>
         <button class="sc-signin-back">back</button>
@@ -153,7 +159,7 @@
       if (!caps) return;
       if (caps.wingmic === "mock") {
         demo.hidden = false;
-        note.textContent = "this deployment runs a demo network — sign in with a real key to score against your own.";
+        note.textContent = "this deployment runs a demo network — link a real key to score against your own.";
       }
       if (caps.wingmic) signin.hidden = false;
     });
@@ -286,7 +292,7 @@
       const r = await fetch(SCORE_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...base, goal: goal || undefined, eventId: f.properties.id }),
+        body: JSON.stringify({ ...base, goal: goal || undefined, eventId: f.properties.id, persona: bay.personaId || undefined }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.status === 400 && j.error === "profile_needed") {
@@ -298,7 +304,7 @@
       if (r.status === 404) throw new Error("that event is no longer listed.");
       if (r.status === 401) {
         sessionStorage.removeItem(TOKEN_KEY);
-        throw new Error("that wingmic key did not work; sign in again.");
+        throw new Error("that wingmic key did not work; link it again.");
       }
       if (!r.ok) throw new Error(j.message || `scoring failed (${r.status})`);
       body = j;
@@ -345,10 +351,10 @@
         claimable
           ? `<div class="sc-claim">
                <b>keep this profile</b>
-               <p>claim it as your wingmic account — this profile moves into your graph and the map starts scoring against your network.</p>
+               <p>link your wingmic key and this profile moves into your graph — then the map scores against your network.</p>
                <div class="sc-claim-row">
                  <input class="sc-claim-key" type="password" placeholder="paste a wingmic key (wk_live_…)" spellcheck="false" autocomplete="off">
-                 <button class="sc-claim-go">claim & sign in</button>
+                 <button class="sc-claim-go">claim & link</button>
                </div>
                <div class="sc-claim-note"></div>
                <a class="sc-claim-link" href="https://wingmic.xyz" target="_blank" rel="noopener">no key yet? make an account →</a>
@@ -384,11 +390,13 @@
     if (kind === "pasted") bits.push("from your paste");
     if (body.fit && body.fit.rank) bits.push(`#${body.fit.rank} of ${body.fit.of} live events for you`);
     if (wingmicLabel === "mock") bits.push("demo network (mock)"); // labeled only on mock deployments; real wiring drops it
+    const view = window.BAY_PERSONAS && window.BAY_PERSONAS.resolvePersona(bay.personaId);
+    if (view) bits.push(`view: ${view.label}`);
     meta.textContent = bits.join(" · ");
 
     if (kind === "wingmic") {
       const out = el("sc-signout");
-      out.textContent = "sign out";
+      out.textContent = "unlink my key";
       out.addEventListener("click", () => {
         sessionStorage.removeItem(TOKEN_KEY);
         show(root, ".sc-ask");

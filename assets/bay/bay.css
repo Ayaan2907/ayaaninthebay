@@ -70,7 +70,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* ---------- layers ---------- */
 .layers {
-  position: absolute; left: 20px; top: 46px; z-index: 6; max-width: min(320px, calc(100% - 40px));
+  position: absolute; left: 20px; top: 46px; z-index: 6; max-width: min(320px, calc(100% - 40px)); max-height: calc(100% - 66px); overflow-y: auto;
   background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
   box-shadow: 0 12px 40px rgba(0,0,0,.18); font-size: .92em;
@@ -84,6 +84,35 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .layers .l-row .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; align-self: center; }
 .layers .l-row.off { color: var(--fg-mute); }
 .layers .l-row .count { color: var(--fg-mute); margin-left: auto; font-size: .86em; }
+
+/* ---------- persona views ---------- */
+.layers .v-block { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.layers .v-row { display: flex; gap: 6px; margin: 6px 0 4px; flex-wrap: wrap; }
+.layers .v-btn { border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); color: var(--fg-dim); font: inherit; font-size: .85em; padding: 3px 10px; cursor: pointer; }
+.layers .v-btn:hover { color: var(--fg); }
+.layers .v-btn.on { border-color: var(--accent); color: var(--accent); background: var(--sel); }
+.layers .v-desc { color: var(--fg-mute); font-size: .82em; min-height: 1em; margin: 2px 0 0; }
+.layers .v-top { margin: 6px 0 0; padding: 0; }
+.layers .v-top[hidden] { display: none; }
+.layers .v-cap { color: var(--fg-mute); font-size: .78em; letter-spacing: .08em; margin: 6px 0 2px; text-transform: uppercase; }
+.layers .v-pick { display: flex; align-items: baseline; gap: 8px; width: 100%; padding: 3px 0; text-align: left; background: none; border: 0; font: inherit; cursor: pointer; }
+.layers .v-pick .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; align-self: center; }
+.layers .v-pick .v-name { color: var(--fg-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layers .v-pick:hover .v-name, .layers .v-pick:focus-visible .v-name { color: var(--accent); }
+
+/* ---------- first-run intro ---------- */
+.intro {
+  position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); z-index: 30;
+  width: min(430px, calc(100% - 48px));
+  background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.22);
+}
+.intro b { color: var(--fg); }
+.intro p { color: var(--fg-dim); margin: 8px 0 0; font-size: .95em; }
+.intro .intro-go { margin-top: 14px; border: 1px solid var(--accent); border-radius: 8px; background: var(--bg-2); color: var(--accent); font: inherit; padding: 6px 18px; cursor: pointer; }
+.intro .intro-go:hover, .intro .intro-go:focus-visible { background: var(--sel); }
+
 .layers .l-foot { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); color: var(--fg-mute); font-size: .8em; }
 .layers .l-toggle { color: var(--fg-dim); white-space: nowrap; }
 .layers .l-toggle:hover { color: var(--accent); }

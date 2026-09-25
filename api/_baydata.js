@@ -11,6 +11,10 @@
 
 const { ENV } = require("./_env.js");
 const log = require("./_log.js");
+// persona views rank the live store server side. the module lives in assets/bay/
+// because the browser loads the same file as a global (the content/knowledge.js
+// pattern): one weights file, so the api's ranking and the map's emphasis agree.
+const personas = require("../assets/bay/personas.js");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -193,12 +197,25 @@ function loadStoreOrSeed(dataDir, type) {
 }
 
 // one read handler for both stores: get/head only, 15 min edge cache like /api/github.
+// ?persona=<id> adds a persona view over the live set: the records are unchanged
+// (layer toggles still own visibility), the persona block carries the ranked ids
+// and fits. an unknown id is a 400, not a silent unranked 200: the boundary is honest.
 function storeHandler(type) {
   return async function handler(req, res) {
     if (req.method !== "GET" && req.method !== "HEAD") {
       res.setHeader("allow", "GET, HEAD");
       res.statusCode = 405;
       return res.end();
+    }
+    const personaId = new URL(req.url, "http://x").searchParams.get("persona");
+    let view = null;
+    if (personaId) {
+      view = personas.resolvePersona(personaId);
+      if (!view) {
+        res.statusCode = 400;
+        res.setHeader("content-type", "application/json");
+        return res.end(JSON.stringify({ error: "bad_persona", message: `unknown persona view; one of ${personas.PERSONA_IDS.join("|")}` }));
+      }
     }
     const now = Date.now();
     const store = loadStoreOrSeed(ENV.dataDir, type);
@@ -213,6 +230,7 @@ function storeHandler(type) {
         store: store.fromStore ? "store" : "seed",
         sources: sourcesOf(live),
         asOf: new Date(now).toISOString(),
+        ...(view ? { persona: { id: view.id, label: view.label, ranked: personas.rank(view, live) } } : {}),
       }),
     );
   };

@@ -307,3 +307,18 @@ test("score: per-ip rate limit trips with 429", async () => {
   const third = await post(rateBase, { eventId: "seed:ai-hack", profile: { headline: "hi" } });
   assert.equal(third.status, 429);
 });
+
+test("score: the persona rides the goal channel, deterministically", async () => {
+  // a persona with no user goal still fills the goal channel from the intent line
+  const ask = { eventId: "seed:ai-hack", profile: { headline: "ml engineer shipping agents", topics: ["agents"] }, persona: "hiring" };
+  const a = await (await post(base, ask)).json();
+  assert.equal(a.score.verdict, (await (await post(base, ask)).json()).score.verdict, "same ask, same answer with a view on");
+  const bare = await post(base, { eventId: "seed:ai-hack", profile: { headline: "ml engineer shipping agents", topics: ["agents"] } });
+  assert.equal(bare.status, 200, "no persona, no change to the old path");
+});
+
+test("score: an unknown persona is a 400, not a silent unranked score", async () => {
+  const bad = await post(base, { eventId: "seed:ai-hack", profile: { headline: "hi" }, persona: "nope" });
+  assert.equal(bad.status, 400);
+  assert.equal((await bad.json()).error, "bad_persona");
+});
