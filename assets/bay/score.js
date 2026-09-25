@@ -43,7 +43,9 @@
       type: "Feature",
       id: e.id,
       geometry: { type: "Point", coordinates: [e.lng, e.lat] },
-      properties: { id: e.id, name: e.title, note: e.venue || "", url: e.url || "", startsAt: e.startsAt || "" },
+      // cat carries the store category: the persona weights read it (canon folds
+      // it together with the places' singular vocabulary)
+      properties: { id: e.id, name: e.title, note: e.venue || "", url: e.url || "", startsAt: e.startsAt || "", cat: e.category || "" },
     };
   }
 
@@ -57,10 +59,12 @@
       const feats = withGeo.map(eventFeature);
       bay.addEvents(feats, data.total != null ? data.total : feats.length);
       if (data.expired) console.info(`bay: ${data.expired} expired events not shown`);
+      if (!feats.length && bay.hudNote) bay.hudNote("no live events right now — the places still carry their notes");
     })
     .catch((err) => {
       // never swallow it: the map still works, the event dots just do not show
       console.error("bay: events failed to load", err);
+      if (bay.hudNote) bay.hudNote("events failed to load — the map still works");
     });
 
   /* ---------- the score card ---------- */
@@ -286,7 +290,7 @@
       const r = await fetch(SCORE_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...base, goal: goal || undefined, eventId: f.properties.id }),
+        body: JSON.stringify({ ...base, goal: goal || undefined, eventId: f.properties.id, persona: bay.personaId || undefined }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.status === 400 && j.error === "profile_needed") {
@@ -384,6 +388,8 @@
     if (kind === "pasted") bits.push("from your paste");
     if (body.fit && body.fit.rank) bits.push(`#${body.fit.rank} of ${body.fit.of} live events for you`);
     if (wingmicLabel === "mock") bits.push("demo network (mock)"); // labeled only on mock deployments; real wiring drops it
+    const view = window.BAY_PERSONAS && window.BAY_PERSONAS.resolvePersona(bay.personaId);
+    if (view) bits.push(`view: ${view.label}`);
     meta.textContent = bits.join(" · ");
 
     if (kind === "wingmic") {
