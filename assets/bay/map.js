@@ -377,6 +377,29 @@
     if (e.key === "n") setNight(!isDark());
   });
 
+  /* ---------- first run: say what this is before asking for a click ---------- */
+  function buildIntro() {
+    let seen = null;
+    try { seen = localStorage.getItem("bay.intro"); } catch (e) { seen = "1"; }
+    if (seen) return;
+    const box = document.createElement("div");
+    box.className = "intro";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-label", "about this map");
+    box.innerHTML = `<b></b><p></p><p></p><p></p><button class="intro-go" type="button">got it</button>`;
+    box.querySelector("b").textContent = "the bay, with notes";
+    const ps = box.querySelectorAll("p");
+    ps[0].textContent = "every dot is a place or a live event with a first-person note. click one.";
+    ps[1].textContent = "red dots are events happening soon: click one to score it against who you are — no signup needed.";
+    ps[2].textContent = "views re-rank the map for what you are here for; layer toggles hide what you do not need.";
+    box.querySelector(".intro-go").addEventListener("click", () => {
+      try { localStorage.setItem("bay.intro", "1"); } catch (e) { /* private mode: it just shows again */ }
+      box.remove();
+    });
+    document.body.appendChild(box);
+  }
+  buildIntro();
+
   /* ---------- boot ---------- */
   map.on("load", () => {
     fetch("/assets/bay/places.json")
