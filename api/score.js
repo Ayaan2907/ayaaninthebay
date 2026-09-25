@@ -16,6 +16,9 @@ const { clientIp, limiter } = require("./_ratelimit.js");
 const P = require("./_puter.js");
 const bay = require("./_baydata.js");
 const scoring = require("./_scoring.js");
+// personas are a ranking layer, not a second scorer: the view re-ranks the map's
+// surfaces, and here it only feeds the existing scorer's goal channel.
+const personas = require("../assets/bay/personas.js");
 const { makeWingmicClient, overlapSafely, WingmicAuthError } = require("./_wingmic.js");
 
 const rate = limiter({ perHour: ENV.scorePerHour });
@@ -82,6 +85,13 @@ module.exports = async function handler(req, res) {
   if (!EVENT_ID_RE.test(eventId)) return json(res, 400, { error: "bad_request", message: "eventId is required" });
   const goal = typeof body.goal === "string" ? body.goal.trim().slice(0, 400) : "";
   const wingmicToken = typeof body.wingmicToken === "string" && TOKEN_RE.test(body.wingmicToken) ? body.wingmicToken : null;
+  // the persona view, when the map has one selected. validated like everything
+  // else at the boundary; it shapes the goal the scorer reads, never the weights.
+  const personaId = typeof body.persona === "string" ? body.persona.trim() : "";
+  if (personaId && !personas.resolvePersona(personaId)) {
+    return json(res, 400, { error: "bad_persona", message: `unknown persona view; one of ${personas.PERSONA_IDS.join("|")}` });
+  }
+  const goalText = personas.combineGoal(personaId, goal);
 
   // resolve the event from the live set, same store and expiry rule as /api/events.
   const store = bay.loadStoreOrSeed(ENV.dataDir, "events");
@@ -143,9 +153,11 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // stage 2: the typed anchor. stage 3: the words.
-  const heuristic = scoring.heuristicScore({ profile, event, goal, meets, fit: fit ? fit.fit : undefined });
-  const ctx = { profile, event, goal, meets, fitRank: fit };
+  // stage 2: the typed anchor. stage 3: the words. both read the combined goal:
+  // the persona intent leads it, the visitor's own words follow. the typed
+  // scorer keeps its one calibration; the persona is an input, not a scorer.
+  const heuristic = scoring.heuristicScore({ profile, event, goal: goalText, meets, fit: fit ? fit.fit : undefined });
+  const ctx = { profile, event, goal: goalText, meets, fitRank: fit };
   let score;
   if (aiOn()) {
     try {
@@ -158,7 +170,7 @@ module.exports = async function handler(req, res) {
     score = scoring.fallbackExplain(heuristic, ctx);
   }
 
-  log.info("score", { ip, eventId, kind, quality: scoring.qualityOf(profile), scorer: score.scorer, go: score.go });
+  log.info("score", { ip, eventId, kind, quality: scoring.qualityOf(profile), scorer: score.scorer, go: score.go, persona: personaId || undefined });
   return json(res, 200, {
     event: { id: event.id, title: event.title, startsAt: event.startsAt, endsAt: event.endsAt, venue: event.venue, url: event.url },
     score,
