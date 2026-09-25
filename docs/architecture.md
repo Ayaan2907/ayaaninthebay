@@ -34,6 +34,8 @@ map: maplibre gl from a cdn, free raster tiles with no key and no build step —
 
 data: `assets/bay/places.json` is a geojson feature array — bay area places with real coordinates, a category (startup, office, housing, sports, tour) and a first-person note (what it is, why it matters, what happened there). no bare pins: a place without a note fails `scripts/check.mjs`. `content/city.json` stays as the seed material `places.json` was curated from; the old canvas city (repos as buildings, github vans, weather) is retired, and `/api/github` + `/api/weather` still serve the terminal.
 
+persona views (assets/bay/personas.js): three launch views — founder hiring, founder raising, newcomer exploring — as pure query weights over the same dots, not a second scorer. the module is shared: the browser loads it as a global, `api/_baydata.js` requires it, so the map's emphasis and the read apis' ranking share one calibration. a view (the selector lives in the /bay layers panel) stamps every dot with a 0..1 fit from a category vector plus intent tokens over the dot's own words; the map dims and shrinks low-fit dots, lists top picks, and sends the persona's intent through the scorer's existing goal channel (`api/score.js` accepts `persona`). rankings are deterministic with id tie-breaks; `/api/events?persona=` and `/api/places?persona=` return a ranked block over the live set and 400 on an unknown id. a view re-ranks and re-weights nothing else: layer toggles still own visibility, nothing is filtered out or moved.
+
 ## /graph (assets/map.js)
 
 the older orbit + timeline view of the repos, still linked from the terminal.
