@@ -20,7 +20,9 @@ const { clientIp, limiter } = require("./_ratelimit.js");
 const crypto = require("node:crypto");
 const { makeWingmicClient, WingmicAuthError } = require("./_wingmic.js");
 
-const rate = limiter({ perHour: ENV.wingmicLinkPerHour });
+// the /bay env surface retired with the deployment; the route stays as the historical
+// record with its former default baked in.
+const rate = limiter({ perHour: 10 });
 
 const json = (res, code, body) => {
   res.statusCode = code;

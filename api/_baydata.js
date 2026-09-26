@@ -9,7 +9,6 @@
 // serve time, not baked in: events die at expiresAt, else endsAt (or startsAt when no
 // end is listed) + grace. places stay until someone removes them or sets expiresAt.
 
-const { ENV } = require("./_env.js");
 const log = require("./_log.js");
 // persona views rank the live store server side. the module lives in assets/bay/
 // because the browser loads the same file as a global (the content/knowledge.js
@@ -150,6 +149,8 @@ function mergeRecords(existing, incoming) {
 // type here is the plural file key ("events" | "places") — do not append an "s".
 const storePath = (dataDir, type) => path.join(dataDir, `${type}.json`);
 const REPO_SEED_DIR = path.resolve(__dirname, "..", "data", "seed");
+// the DATA_DIR env var retired with the deployment; the store io keeps the former default.
+const REPO_DATA_DIR = path.resolve(__dirname, "..", "data");
 
 function readRecords(file, { source }) {
   let raw;
@@ -218,7 +219,7 @@ function storeHandler(type) {
       }
     }
     const now = Date.now();
-    const store = loadStoreOrSeed(ENV.dataDir, type);
+    const store = loadStoreOrSeed(REPO_DATA_DIR, type);
     const { live, expiredCount } = liveFilter(store.records, now);
     res.setHeader("content-type", "application/json");
     res.setHeader("cache-control", "public, s-maxage=900, stale-while-revalidate=3600");

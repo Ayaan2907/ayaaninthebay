@@ -10,6 +10,7 @@
 // the mock only when WINGMIC_MOCK=on, and production without wiring keeps the anonymous ask
 // path working.
 
+const path = require("node:path");
 const { ENV } = require("./_env.js");
 const log = require("./_log.js");
 const { clientIp, limiter } = require("./_ratelimit.js");
@@ -21,7 +22,10 @@ const scoring = require("./_scoring.js");
 const personas = require("../assets/bay/personas.js");
 const { makeWingmicClient, overlapSafely, WingmicAuthError } = require("./_wingmic.js");
 
-const rate = limiter({ perHour: ENV.scorePerHour });
+// the /bay env surface retired with the deployment; the route stays as the historical
+// record with its former defaults baked in.
+const DATA_DIR = path.join(__dirname, "..", "data");
+const rate = limiter({ perHour: 30 });
 const wingmic = makeWingmicClient(ENV);
 
 const json = (res, code, body) => {
@@ -94,7 +98,7 @@ module.exports = async function handler(req, res) {
   const goalText = personas.combineGoal(personaId, goal);
 
   // resolve the event from the live set, same store and expiry rule as /api/events.
-  const store = bay.loadStoreOrSeed(ENV.dataDir, "events");
+  const store = bay.loadStoreOrSeed(DATA_DIR, "events");
   const known = store.records.find((e) => e.id === eventId);
   const { live } = bay.liveFilter(store.records);
   const event = live.find((e) => e.id === eventId);
