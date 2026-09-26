@@ -1,6 +1,6 @@
 # adr 0002: puter as the ai, storage and hosting provider
 
-date: 2026-09-08 · status: accepted
+date: 2026-09-08 · status: superseded 2026-09-26 by [adr 0004](0004-deployment-retired.md) — wingmic runs its own model providers
 
 ## context
 

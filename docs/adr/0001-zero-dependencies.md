@@ -1,6 +1,6 @@
 # adr 0001: one runtime dependency, no build step
 
-date: 2026-09-08 · status: accepted
+date: 2026-09-08 · status: superseded 2026-09-26 by [adr 0004](0004-deployment-retired.md) — the merged product is a typed bun monorepo in Ayaan2907/wingmic
 
 ## context
 
