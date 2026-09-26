@@ -1,21 +1,14 @@
-import { test, before, after } from "node:test";
+import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import { createRequire } from "node:module";
 
-// two layers:
-//   unit     , api/_scoring.js is pure: determinism under fixed inputs, boundary verdicts,
-//               the llm clamp and its junk-throwing, profile parsing.
-//   integration, the real server against a temp DATA_DIR (same harness as bayapi.test.mjs),
-//               WINGMIC_MOCK=on, no ai keys so CHAT_PROVIDER falls back to "none" and the
-//               typed explain path runs hermetically. covers the signed-in (wingmic token)
-//               and anonymous (linkedin url / paste) flows end to end.
+// api/_scoring.js is pure, so these tests run hermetically: determinism under fixed
+// inputs, boundary verdicts, the llm clamp and its junk-throwing, profile parsing.
+// the integration layer (the /api/score route over a running scripts/server.mjs)
+// retired with the deployment on 2026-09-26; the route's behavior is re-expressed in
+// the tRPC boundary tests in Ayaan2907/wingmic.
 const require = createRequire(import.meta.url);
 const scoring = require(new URL("../api/_scoring.js", import.meta.url).pathname);
-const bay = require(new URL("../api/_baydata.js", import.meta.url).pathname);
 
 const NOW = new Date("2026-09-24T18:00:00Z").getTime();
 const iso = (ms) => new Date(ms).toISOString();
@@ -43,13 +36,6 @@ const TOUR_EVENT = {
   lat: 37.76,
   lng: -122.42,
   startsAt: iso(NOW + 48e5),
-};
-const DEAD_EVENT = {
-  ...HACK_EVENT,
-  id: "seed:dead-event",
-  title: "dead event",
-  startsAt: iso(NOW - 96 * 36e5),
-  endsAt: iso(NOW - 92 * 36e5), // past the 24h grace at NOW
 };
 const ENGINEER = {
   kind: "pasted",
@@ -192,133 +178,4 @@ test("scoring: a pasted text source builds a throwaway with parsed fields and th
   assert.deepEqual(b.profile.roles, ["ml engineer"]);
   assert.ok(b.profile.raw.includes("looking for a cofounder"), "the raw text rides along for retrieval");
   assert.equal(b.quality, "ok");
-});
-
-/* ---------- integration: the real server ---------- */
-
-let main, base, rateProc, rateBase;
-
-const writeStore = (dir, records) => {
-  fs.writeFileSync(path.join(dir, "events.json"), JSON.stringify({ updatedAt: iso(NOW), records }));
-};
-
-const norm = (r) => bay.normalizeRecord(r).record;
-
-before(async () => {
-  const root = new URL("..", import.meta.url).pathname;
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bay-score-"));
-  writeStore(dir, [norm(HACK_EVENT), norm(TOUR_EVENT), norm(DEAD_EVENT)]);
-  const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), "bay-rate-"));
-  writeStore(dir2, [norm(HACK_EVENT)]);
-
-  const portA = 4500 + Math.floor(Math.random() * 300);
-  const portB = portA + 1;
-  base = `http://127.0.0.1:${portA}`;
-  rateBase = `http://127.0.0.1:${portB}`;
-  const boot = (port, dataDir, extra) =>
-    spawn(process.execPath, ["scripts/server.mjs"], {
-      env: { PATH: process.env.PATH, PORT: String(port), LOG_LEVEL: "error", DATA_DIR: dataDir, ...extra },
-      cwd: root,
-      stdio: "ignore",
-    });
-  main = boot(portA, dir, { WINGMIC_MOCK: "on" });
-  // production mode so the handler module (and its module-level limiter) persists across
-  // requests, dev re-requires handlers per request, which would never trip the limit.
-  // ingest stays off so the boot never calls out to event apis.
-  rateProc = boot(portB, dir2, { SCORE_PER_HOUR: "2", NODE_ENV: "production", INGEST_ENABLED: "off" });
-  for (const b of [base, rateBase]) {
-    for (let i = 0; i < 50; i++) {
-      try {
-        await fetch(b + "/api/health");
-        break;
-      } catch {
-        await new Promise((r) => setTimeout(r, 100));
-      }
-    }
-  }
-});
-after(() => {
-  main.kill();
-  rateProc.kill();
-});
-
-const post = (b, body) =>
-  fetch(b + "/api/score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-
-test("score: capability probe reports the typed fallback and the mock wingmic", async () => {
-  const r = await fetch(base + "/api/score");
-  const j = await r.json();
-  assert.equal(r.status, 200);
-  assert.equal(j.ai, false, "no keys in this env, so the llm stage is off");
-  assert.equal(j.wingmic, "mock");
-});
-
-test("score: signed-in demo profile gets a full card with mock network overlap", async () => {
-  const r = await post(base, { eventId: "seed:ai-hack", goal: "meet builders", wingmicToken: "mock-demo-1" });
-  assert.equal(r.status, 200);
-  const j = await r.json();
-  assert.equal(j.profile.kind, "wingmic");
-  assert.equal(j.event.id, "seed:ai-hack");
-  const s = j.score;
-  assert.ok(["go", "maybe", "skip"].includes(s.verdict), `verdict is explicit: ${s.verdict}`);
-  assert.ok(typeof s.outcome === "string" && s.outcome.length > 10, "the outcome sentence is there");
-  assert.ok(s.reasons.length >= 1, "reasons are there");
-  assert.ok(s.meet.length >= 1 && s.meet[0].who === "dex morales", "the mock network surfaces dex for a hackathon");
-  assert.ok(j.fit && j.fit.rank >= 1 && j.fit.rank <= j.fit.of, "rank is honest within the live set");
-});
-
-test("score: same ask, same answer (typed determinism over http)", async () => {
-  const ask = { eventId: "seed:ai-hack", profile: { headline: "ml engineer shipping agents", topics: ["agents"] } };
-  const a = await (await post(base, ask)).json();
-  const b = await (await post(base, ask)).json();
-  assert.equal(a.score.go, b.score.go);
-  assert.deepEqual(a.score.reasons, b.score.reasons);
-});
-
-test("score: anonymous linkedin url scores without a login wall", async () => {
-  const r = await post(base, { eventId: "seed:ai-hack", source: { kind: "linkedin_url", value: "https://www.linkedin.com/in/sam-rivera" } });
-  assert.equal(r.status, 200);
-  const j = await r.json();
-  assert.equal(j.profile.kind, "throwaway", "no signup between paste and answer");
-  assert.ok(j.score.verdict, "the answer still lands");
-});
-
-test("score: a bare url without a profile is asked for, not guessed", async () => {
-  const r = await post(base, { eventId: "seed:ai-hack", source: { kind: "linkedin_url", value: "https://evil.example/u/x" } });
-  assert.equal(r.status, 400);
-  assert.equal((await r.json()).error, "bad_source");
-  const none = await post(base, { eventId: "seed:ai-hack" });
-  assert.equal(none.status, 400);
-  assert.equal((await none.json()).error, "profile_needed");
-});
-
-test("score: unknown and expired events are refused honestly", async () => {
-  const unknown = await post(base, { eventId: "seed:nope", profile: { headline: "hi" } });
-  assert.equal(unknown.status, 404);
-  const dead = await post(base, { eventId: "seed:dead-event", profile: { headline: "hi" } });
-  assert.equal(dead.status, 410);
-});
-
-test("score: per-ip rate limit trips with 429", async () => {
-  const first = await post(rateBase, { eventId: "seed:ai-hack", profile: { headline: "hi" } });
-  assert.equal(first.status, 200);
-  const second = await post(rateBase, { eventId: "seed:ai-hack", profile: { headline: "hi" } });
-  assert.equal(second.status, 200);
-  const third = await post(rateBase, { eventId: "seed:ai-hack", profile: { headline: "hi" } });
-  assert.equal(third.status, 429);
-});
-
-test("score: the persona rides the goal channel, deterministically", async () => {
-  // a persona with no user goal still fills the goal channel from the intent line
-  const ask = { eventId: "seed:ai-hack", profile: { headline: "ml engineer shipping agents", topics: ["agents"] }, persona: "hiring" };
-  const a = await (await post(base, ask)).json();
-  assert.equal(a.score.verdict, (await (await post(base, ask)).json()).score.verdict, "same ask, same answer with a view on");
-  const bare = await post(base, { eventId: "seed:ai-hack", profile: { headline: "ml engineer shipping agents", topics: ["agents"] } });
-  assert.equal(bare.status, 200, "no persona, no change to the old path");
-});
-
-test("score: an unknown persona is a 400, not a silent unranked score", async () => {
-  const bad = await post(base, { eventId: "seed:ai-hack", profile: { headline: "hi" }, persona: "nope" });
-  assert.equal(bad.status, 400);
-  assert.equal((await bad.json()).error, "bad_persona");
 });

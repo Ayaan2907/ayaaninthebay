@@ -2,26 +2,19 @@
 
 my personal site, built as a coding-agent session. type a question and it answers as me. type `/` and it shows commands.
 
-`/bay` is its own surface now: san francisco at night, districts are chapters of my life, buildings are my github repos, vans are commits driving to the dock, the weather and daylight are real. the terminal links out to it. `/build <thing>` writes and ships a small web app for the visitor, live at a url, and takes follow-up edits. `/call` is a voice call with the ai version of me. `/activity` is my github feed. `/blog` is markdown in a folder that a github action publishes in my voice.
+`/bay` was its own surface: san francisco at night, districts are chapters of my life, buildings are my github repos, vans are commits driving to the dock, the weather and daylight are real. the terminal links out to it. (2026-09-26: the /bay event map, its scoring and its ingest moved into [Ayaan2907/wingmic](https://github.com/Ayaan2907/wingmic) at app.wingmic.xyz/bay.) `/build <thing>` writes and ships a small web app for the visitor, live at a url, and takes follow-up edits. `/call` is a voice call with the ai version of me. `/activity` is my github feed. `/blog` is markdown in a folder that a github action publishes in my voice.
 
-one runtime dependency (`@heyputer/puter.js`), no build step, no framework. node 22, one process, deployed on railway.
-
-live: <https://ayaan.sh>
+one runtime dependency (`@heyputer/puter.js`), no build step, no framework. node 22, one process. the railway service retired 2026-09-26 with the /bay merge; nothing here deploys anymore.
 
 ## run it
 
+there is no dev server to start; what still runs from a checkout:
+
 ```
-git clone https://github.com/Ayaan2907/ayaan-site && cd ayaan-site
+git clone https://github.com/Ayaan2907/ayaaninthebay && cd ayaaninthebay
 npm ci
-cp .env.example .env.local      # add PUTER_AUTH_TOKEN; everything else has a default
-npm run dev                     # http://localhost:3000, hot-reloads api/ and restarts on change
-```
-
-without a token the site still works: the terminal answers from `content/knowledge.js` offline, `/build` runs in visitor mode, `/call` is off. the status bar says `ai: local`.
-
-```
 npm run check     # syntax, json shapes, secret scan, env docs in sync, banned words   (ci)
-npm test          # node:test: env validation, rate limiter, the server end to end     (ci)
+npm test          # node:test: the pure modules, hermetically
 npm run publish   # drafts/ → posts/, rebuild index + rss + billboards
 ```
 
@@ -64,7 +57,6 @@ posts/index.json         generated
 feed.xml                 generated
 drafts/                  drop rough notes here; the publish action turns them into posts
 
-scripts/server.mjs       the server. static files + api/ handlers. dev and prod are the same file
 scripts/check.mjs        the ci gate
 scripts/publish.mjs      drafts → posts
 tests/                   node:test
@@ -81,7 +73,7 @@ browser ──/api/chat──▶ api/chat.js ──▶ puter sdk (gpt-4.1, my to
         ──/api/weather▶ api/weather.js ▶ open-meteo
 ```
 
-details in [`docs/architecture.md`](docs/architecture.md). deploying and rotating secrets in [`docs/deploy.md`](docs/deploy.md). why it is built this way in [`docs/adr/`](docs/adr/).
+details in [`docs/architecture.md`](docs/architecture.md). the retired railway runbook and secret rotation notes live on in [`docs/deploy.md`](docs/deploy.md) as history. why it is built this way in [`docs/adr/`](docs/adr/); 0001–0003 are superseded by [0004](docs/adr/0004-deployment-retired.md).
 
 ## edit what it says about me
 
@@ -89,13 +81,13 @@ everything is in `content/knowledge.js`. change a bullet there and the terminal,
 
 ## publish a post
 
-write anything into `drafts/some-note.md` (bullets, a transcript, a paragraph) and push. the `publish` action rewrites it in my voice, writes `posts/<slug>.md`, rebuilds the index, rss and the blog billboards, commits, and railway redeploys. read it at `/blog/<slug>` or `/read <slug>` in the terminal.
+write anything into `drafts/some-note.md` (bullets, a transcript, a paragraph) and push. the `publish` action rewrites it in my voice, writes `posts/<slug>.md`, rebuilds the index, rss and the blog billboards, and commits. read it at `/blog/<slug>` or `/read <slug>` in the terminal.
 
 to write a post by hand, create `posts/<slug>.md` with front matter and run `npm run index`. `draft: true` hides a post.
 
 ## bay data
 
-`/bay` events and places come from `scripts/ingest.mjs`: a committed seed (`data/seed/`), luma's public calendar, and an eventbrite stub. `npm run ingest:dry` previews a run; in production the server refreshes the store itself every `INGEST_INTERVAL_HOURS`, and stale events drop out of the api after a 24h grace. storage is flat json with a libsql path open — `docs/deploy.md` has the ops and cron notes.
+the /bay map and its event ingestion live in [Ayaan2907/wingmic](https://github.com/Ayaan2907/wingmic) since 2026-09-26; the ingest runs there nightly into turso. `scripts/ingest.mjs` stays here as the historical record: `npm run ingest:dry` still previews a run against the committed seed (`data/seed/`), luma's public calendar, and an eventbrite stub, and stale events drop out of its output after a 24h grace. the flat-json store and the in-process refresh timer retired with this repo's deployment.
 
 ## commands
 

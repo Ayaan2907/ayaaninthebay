@@ -141,7 +141,7 @@ async function runIngest(options = {}) {
     dryRun = false,
     only = null,
     fetchImpl = fetch,
-    dataDir = ENV.dataDir,
+    dataDir = path.join(ROOT, "data"),
     now = new Date().toISOString(),
   } = options;
   if (running) return { skipped: true, reason: "an ingest run is already in progress" };

@@ -4,8 +4,8 @@ import { createRequire } from "node:module";
 
 // the persona weights module is pure and shared by both surfaces, so the tests
 // pin its behavior from node. the browser copy is byte-identical: same file,
-// loaded as a global. the server-side rank over the live store is pinned by the
-// http tests in bayapi.test.mjs, the client re-rank by the qa screenshots.
+// loaded as a global. the server-side rank over the live store moved with the
+// deployment: it is pinned by the tRPC boundary tests in Ayaan2907/wingmic.
 const require = createRequire(import.meta.url);
 const personas = require(new URL("../assets/bay/personas.js", import.meta.url).pathname);
 
@@ -102,93 +102,4 @@ test("personas: combineGoal feeds the scorer's goal channel only", () => {
   assert.equal(personas.combineGoal("hiring", ""), hiring.intent, "persona alone fills the goal");
   assert.equal(personas.combineGoal("hiring", "meet rust devs"), `${hiring.intent}. meet rust devs`, "persona leads, user words follow");
   assert.equal(personas.combineGoal("raising", "   "), personas.resolvePersona("raising").intent, "a whitespace goal counts as none");
-});
-
-/* ---------- integration: the read apis rank the live store ---------- */
-
-// boots the real server against a temp DATA_DIR holding the same four-record
-// fixture the unit tests pin, so the http ranking over the store is pinned too.
-import { before, after } from "node:test";
-import { spawn } from "node:child_process";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-const baydata = require(new URL("../api/_baydata.js", import.meta.url).pathname);
-
-const FIXTURE = [
-  { id: "luma:hackathon", category: "hackathons", title: "ai agents hackathon weekend, builders ship fast, recruiters watch" },
-  { id: "luma:demo-night", category: "events", title: "founder demo night, eight startups pitch to a panel of investors" },
-  { id: "luma:food-tour", category: "tours", title: "mission district food tour for newcomers, walk and taste" },
-  { id: "luma:pickup-soccer", category: "sports", title: "casual pickup soccer in the park, newcomers welcome" },
-];
-
-let proc, base;
-before(async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bay-persona-"));
-  const now = new Date().toISOString();
-  const records = FIXTURE.map((f) =>
-    baydata.normalizeRecord({
-      ...f, type: "event", source: "seed", venue: "somewhere sf", lat: 37.77, lng: -122.41,
-      startsAt: new Date(Date.now() + 36e5).toISOString(),
-      endsAt: new Date(Date.now() + 4 * 36e5).toISOString(),
-    }).record,
-  );
-  fs.writeFileSync(path.join(dir, "events.json"), JSON.stringify({ updatedAt: now, records }));
-  const port = 4850 + Math.floor(Math.random() * 140);
-  base = `http://127.0.0.1:${port}`;
-  proc = spawn(process.execPath, ["scripts/server.mjs"], {
-    env: { PATH: process.env.PATH, PORT: String(port), LOG_LEVEL: "error", DATA_DIR: dir, INGEST_ENABLED: "off" },
-    cwd: new URL("..", import.meta.url).pathname,
-    stdio: "ignore",
-  });
-  for (let i = 0; i < 50; i++) { try { await fetch(base + "/api/health"); return; } catch { await new Promise((r) => setTimeout(r, 100)); } }
-  throw new Error("server did not start");
-});
-after(() => proc.kill());
-
-test("persona api: /api/events?persona=hiring ranks the live store, deterministically", async () => {
-  const one = await (await fetch(base + "/api/events?persona=hiring")).json();
-  assert.equal(one.persona.id, "hiring");
-  assert.equal(one.persona.label, "founder hiring");
-  assert.deepEqual(one.persona.ranked.map((r) => r.id), [
-    "luma:hackathon",
-    "luma:demo-night",
-    "luma:pickup-soccer",
-    "luma:food-tour",
-  ], "hiring puts the hackathon first, and this ordering is pinned");
-  const two = await (await fetch(base + "/api/events?persona=hiring")).json();
-  assert.deepEqual(one.persona.ranked, two.persona.ranked, "fixed store, fixed ranking");
-  // the records ride unchanged: the view ranks, it does not filter or rewrite
-  assert.deepEqual(one.events.map((e) => e.id).sort(), [...one.persona.ranked.map((r) => r.id)].sort());
-  assert.ok(one.persona.ranked.every((r) => r.fit >= 0 && r.fit <= 1));
-});
-
-test("persona api: each persona gets its own order from the same store", async () => {
-  const orders = {};
-  for (const id of ["hiring", "raising", "newcomer"]) {
-    const j = await (await fetch(`${base}/api/events?persona=${id}`)).json();
-    assert.equal(j.persona.id, id);
-    orders[id] = j.persona.ranked.map((r) => r.id);
-  }
-  assert.equal(orders.hiring[0], "luma:hackathon");
-  assert.equal(orders.raising[0], "luma:demo-night");
-  assert.equal(orders.newcomer[0], "luma:food-tour");
-  assert.notDeepEqual(orders.hiring, orders.newcomer, "different views, different order");
-});
-
-test("persona api: unknown persona is a 400, missing persona adds nothing", async () => {
-  const bad = await fetch(base + "/api/events?persona=nope");
-  assert.equal(bad.status, 400);
-  assert.equal((await bad.json()).error, "bad_persona");
-  const plain = await (await fetch(base + "/api/events")).json();
-  assert.equal("persona" in plain, false, "no persona asked, no persona block");
-});
-
-test("persona api: /api/places ranks the committed seed the same way", async () => {
-  const j = await (await fetch(base + "/api/places?persona=newcomer")).json();
-  assert.equal(j.persona.id, "newcomer");
-  assert.ok(j.persona.ranked.length >= 1, "the seed places are ranked");
-  assert.deepEqual(j.persona.ranked, [...j.persona.ranked].sort((a, b) => b.fit - a.fit || a.id.localeCompare(b.id)), "sorted by fit desc, id tie-break");
-  const hiring = await (await fetch(base + "/api/places?persona=hiring")).json();
-  assert.notDeepEqual(hiring.persona.ranked.map((r) => r.id), j.persona.ranked.map((r) => r.id), "views disagree on places too");
 });

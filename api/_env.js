@@ -1,8 +1,10 @@
 // Single place that reads process.env. Nothing else in api/ or scripts/ touches it.
 // Validated once at first require; a bad value fails loudly at boot, not on the first request.
 // Every var is documented in .env.example. Keep the two in sync.
-
-const path = require("node:path");
+//
+// retired 2026-09-26 with the deployment (the /bay surface lives in Ayaan2907/wingmic
+// now): WINGMIC_*, INGEST_*, SCORE_PER_HOUR and DATA_DIR, plus the server
+// (scripts/server.mjs) and its in-process ingest timer that read them.
 
 const int = (name, fallback, { min = 0, max = 1e6 } = {}) => {
   const raw = process.env[name];
@@ -35,9 +37,6 @@ const buildMode = process.env.BUILD_KILL === "1"
 if (buildMode === "owner" && !PUTER_AUTH_TOKEN) throw new Error("env BUILD_MODE=owner needs PUTER_AUTH_TOKEN");
 
 const nodeEnv = oneOf("NODE_ENV", ["development", "production", "test"], "development");
-// bay ingest: on by default in production (the store is per-container and needs the
-// refresh), off in dev so `npm run dev` never calls out to event apis unasked.
-const ingestEnabled = oneOf("INGEST_ENABLED", ["on", "off"], nodeEnv === "production" ? "on" : "off");
 
 const ENV = Object.freeze({
   nodeEnv,
@@ -62,14 +61,6 @@ const ENV = Object.freeze({
   buildDailyCap: int("BUILD_DAILY_CAP", 60, { min: 1 }),
 
 
-  // /api/score (the /bay event cards)
-  scorePerHour: int("SCORE_PER_HOUR", 30, { min: 1, max: 1000 }),
-  wingmicMock: oneOf("WINGMIC_MOCK", ["on", "off"], "off"),
-  // wingmic public REST v1 (e.g. https://app.wingmic.xyz). when set, the real client
-  // serves the signed-in path; WINGMIC_MOCK stays for dev and tests only.
-  wingmicBaseUrl: str("WINGMIC_BASE_URL", ""),
-  wingmicLinkPerHour: int("WINGMIC_LINK_PER_HOUR", 10, { min: 1, max: 1000 }),
-
   // /call
   ttsVoice: str("TTS_VOICE", "Matthew"),
   ttsPerHour: int("TTS_PER_HOUR", 240, { min: 1 }),
@@ -78,21 +69,9 @@ const ENV = Object.freeze({
   githubUser: str("GITHUB_USER", "Ayaan2907"),
   githubToken: str("GITHUB_TOKEN"),
 
-  // bay data (/api/events, /api/places, scripts/ingest.mjs)
-  dataDir: str("DATA_DIR", path.resolve(__dirname, "..", "data")),
-  ingestEnabled,
-  ingestIntervalHours: int("INGEST_INTERVAL_HOURS", 6, { min: 1, max: 168 }),
+  // bay ingest cities (scripts/ingest.mjs, kept as the historical record; the live
+  // ingest runs in the wingmic monorepo now)
   lumaCities: str("LUMA_CITIES", "sf"),
 });
 
-// Safe to print: secrets are reported as present/absent only.
-function describe() {
-  return {
-    nodeEnv: ENV.nodeEnv, port: ENV.port, chatProvider: ENV.chatProvider, chatModel: ENV.chatModel,
-    buildMode: ENV.buildMode, buildModel: ENV.buildModel, ttsVoice: ENV.ttsVoice,
-    puter: ENV.puterAuthToken ? "set" : "missing", anthropic: ENV.anthropicApiKey ? "set" : "missing", github: ENV.githubToken ? "set" : "missing",
-    ingest: ENV.ingestEnabled, dataDir: ENV.dataDir,
-  };
-}
-
-module.exports = { ENV, describe };
+module.exports = { ENV };

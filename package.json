@@ -1,12 +1,10 @@
 {
-  "name": "ayaan-site",
+  "name": "ayaaninthebay",
   "version": "1.0.0",
   "private": true,
-  "description": "ayaan's personal site: an agent-session terminal, an ai that answers as me, sf at night as a map, /build and /call. one runtime dependency.",
+  "description": "ayaan's personal site: an agent-session terminal, an ai that answers as me, /build and /call. the /bay map lives in Ayaan2907/wingmic. one runtime dependency.",
   "type": "commonjs",
   "scripts": {
-    "dev": "node --watch --env-file-if-exists=.env.local scripts/server.mjs",
-    "start": "node scripts/server.mjs",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "check": "node scripts/check.mjs",
     "publish": "node scripts/publish.mjs",
@@ -22,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Ayaan2907/ayaan-site"
+    "url": "https://github.com/Ayaan2907/ayaaninthebay"
   },
   "license": "MIT"
 }
